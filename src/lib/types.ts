@@ -1,0 +1,126 @@
+export type PostType = "insightful" | "poll" | "storytelling";
+export type CardFormat = "square" | "linkedin";
+export type ColorVariant = "light" | "dark";
+
+export interface CardConfig {
+  postType: PostType;
+  format: CardFormat;
+  colorVariant: ColorVariant;
+  text: string;
+}
+
+export interface TemplateConfig {
+  id: string;
+  postType: PostType;
+  format: CardFormat;
+  colorVariant: ColorVariant;
+  label: string;
+  width: number;
+  height: number;
+  textArea: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  textColor: string;
+  bgColor: string;
+  tagLabel: string;
+}
+
+export const TEMPLATES: TemplateConfig[] = [
+  // Insightful Light
+  {
+    id: "insightful-light-square",
+    postType: "insightful",
+    format: "square",
+    colorVariant: "light",
+    label: "Insightful (Light)",
+    width: 627,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 430, height: 320 },
+    textColor: "#0A0632",
+    bgColor: "#F7F5F3",
+    tagLabel: "INSIGHT",
+  },
+  {
+    id: "insightful-light-linkedin",
+    postType: "insightful",
+    format: "linkedin",
+    colorVariant: "light",
+    label: "Insightful (Light)",
+    width: 1200,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 680, height: 320 },
+    textColor: "#0A0632",
+    bgColor: "#F7F5F3",
+    tagLabel: "INSIGHT",
+  },
+  // Insightful Dark
+  {
+    id: "insightful-dark-square",
+    postType: "insightful",
+    format: "square",
+    colorVariant: "dark",
+    label: "Insightful (Dark)",
+    width: 627,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 430, height: 320 },
+    textColor: "#F7F5F3",
+    bgColor: "#0A0632",
+    tagLabel: "INSIGHT",
+  },
+  {
+    id: "insightful-dark-linkedin",
+    postType: "insightful",
+    format: "linkedin",
+    colorVariant: "dark",
+    label: "Insightful (Dark)",
+    width: 1200,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 680, height: 320 },
+    textColor: "#F7F5F3",
+    bgColor: "#0A0632",
+    tagLabel: "INSIGHT",
+  },
+  // Poll
+  {
+    id: "poll-light-square",
+    postType: "poll",
+    format: "square",
+    colorVariant: "light",
+    label: "Poll / Quiz",
+    width: 627,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 430, height: 320 },
+    textColor: "#0A0632",
+    bgColor: "#F7F5F3",
+    tagLabel: "QUIZ",
+  },
+  {
+    id: "poll-light-linkedin",
+    postType: "poll",
+    format: "linkedin",
+    colorVariant: "light",
+    label: "Poll / Quiz",
+    width: 1200,
+    height: 627,
+    textArea: { x: 50, y: 130, width: 680, height: 320 },
+    textColor: "#0A0632",
+    bgColor: "#F7F5F3",
+    tagLabel: "QUIZ",
+  },
+];
+
+export function getTemplate(
+  postType: PostType,
+  format: CardFormat,
+  colorVariant: ColorVariant
+): TemplateConfig | undefined {
+  return TEMPLATES.find(
+    (t) =>
+      t.postType === postType &&
+      t.format === format &&
+      t.colorVariant === colorVariant
+  );
+}
