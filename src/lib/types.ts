@@ -95,7 +95,7 @@ export const TEMPLATES: TemplateConfig[] = [
     textArea: { x: 50, y: 130, width: 430, height: 320 },
     textColor: "#0A0632",
     bgColor: "#F7F5F3",
-    tagLabel: "QUIZ",
+    tagLabel: "POLL",
   },
   {
     id: "poll-light-linkedin",
@@ -108,7 +108,7 @@ export const TEMPLATES: TemplateConfig[] = [
     textArea: { x: 50, y: 130, width: 680, height: 320 },
     textColor: "#0A0632",
     bgColor: "#F7F5F3",
-    tagLabel: "QUIZ",
+    tagLabel: "POLL",
   },
 ];
 

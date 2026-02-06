@@ -372,7 +372,7 @@ function buildSvgString(
 
   // Icon position
   const iconSize = isLinkedin ? 128 : 128;
-  const iconCx = isLinkedin ? width * 0.79 : width * 0.69;
+  const iconCx = isLinkedin ? width * 0.79 : width * 0.78;
   const iconCy = isLinkedin ? height * 0.28 : height * 0.54;
 
   // Build gradient defs
@@ -510,7 +510,7 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
 
   // Icon position
   const iconSize = 128;
-  const iconCx = isLinkedin ? width * 0.79 : width * 0.69;
+  const iconCx = isLinkedin ? width * 0.79 : width * 0.78;
   const iconCy = isLinkedin ? height * 0.28 : height * 0.54;
 
   // Deterministic seed from template properties to avoid hydration mismatch
