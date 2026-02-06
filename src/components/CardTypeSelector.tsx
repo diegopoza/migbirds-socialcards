@@ -74,7 +74,7 @@ export default function CardTypeSelector({
             <svg width="20" height="10" viewBox="0 0 20 10" className="opacity-60">
               <rect width="20" height="10" rx="2" fill="currentColor" />
             </svg>
-            LinkedIn
+            Wide
           </button>
           <button
             onClick={() => onFormatChange("square")}
