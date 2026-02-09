@@ -465,21 +465,22 @@ function calcMaxChars(fontSize: number, textAreaWidth: number): number {
 function calcTextLayout(template: TemplateConfig, text: string) {
   const isLinkedin = template.format === "linkedin";
   const isDarkSquareInsightful = template.colorVariant === "dark" && template.postType === "insightful" && !isLinkedin;
-  const maxFontSize = isLinkedin ? 42 : (isDarkSquareInsightful ? 38 : 34);
+  const maxFontSize = isLinkedin ? 42 : (isDarkSquareInsightful ? 42 : 34);
   const minFontSize = isLinkedin ? 18 : 14;
 
-  // Dark square insightful: use expanded text area from y=80 to y=320 (photos start at y=333)
+  // Dark square insightful: use expanded text area using full frame width and top space
   const textAreaY = isDarkSquareInsightful ? 80 : template.textArea.y;
   const textAreaHeight = isDarkSquareInsightful ? 240 : template.textArea.height;
+  const textAreaWidth = isDarkSquareInsightful ? 490 : template.textArea.width;
 
   let fontSize = maxFontSize;
-  let maxChars = calcMaxChars(fontSize, template.textArea.width);
+  let maxChars = calcMaxChars(fontSize, textAreaWidth);
   let wrappedLines = wrapText(text || "Your text here...", maxChars);
   const maxLines = Math.floor(textAreaHeight / (maxFontSize * 1.35));
 
   while (wrappedLines.length > maxLines && fontSize > minFontSize) {
     fontSize -= 2;
-    maxChars = calcMaxChars(fontSize, template.textArea.width);
+    maxChars = calcMaxChars(fontSize, textAreaWidth);
     wrappedLines = wrapText(text || "Your text here...", maxChars);
   }
 
