@@ -10,8 +10,8 @@ interface ExportButtonsProps {
 }
 
 export default function ExportButtons({ template, text, disabled }: ExportButtonsProps) {
-  const downloadSvg = () => {
-    const svgString = renderCardSvg(template, text);
+  const downloadSvg = async () => {
+    const svgString = await renderCardSvg(template, text);
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -22,7 +22,7 @@ export default function ExportButtons({ template, text, disabled }: ExportButton
   };
 
   const downloadPng = async () => {
-    const svgString = renderCardSvg(template, text);
+    const svgString = await renderCardSvg(template, text);
     const scale = 2; // 2x resolution for sharp output
     const canvas = document.createElement("canvas");
     canvas.width = template.width * scale;

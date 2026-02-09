@@ -105,7 +105,10 @@ function LightGradientBg({ width, height, seed }: { width: number; height: numbe
 }
 
 // Gradient blur background for dark theme
+// Matches original SVGs: large radial blob (purple→pink→orange) on right side,
+// small linear blob (green→blue) on left/top
 function DarkGradientBg({ width, height, seed }: { width: number; height: number; seed: string }) {
+  const isLinkedin = width > 700;
   const filterId1 = `blur1d_${seed}`;
   const filterId2 = `blur2d_${seed}`;
   const gradId1 = `grad1d_${seed}`;
@@ -114,38 +117,41 @@ function DarkGradientBg({ width, height, seed }: { width: number; height: number
   return (
     <>
       <defs>
-        <filter id={filterId1} x="-50%" y="-50%" width="200%" height="200%"
+        {/* Large radial blob uses higher blur (200 in original) */}
+        <filter id={filterId1} x="-80%" y="-80%" width="260%" height="260%"
           colorInterpolationFilters="sRGB">
-          <feGaussianBlur stdDeviation="150" />
+          <feGaussianBlur stdDeviation="200" />
         </filter>
-        <filter id={filterId2} x="-50%" y="-50%" width="200%" height="200%"
+        {/* Small linear blob uses lower blur (101 in original) */}
+        <filter id={filterId2} x="-80%" y="-80%" width="260%" height="260%"
           colorInterpolationFilters="sRGB">
-          <feGaussianBlur stdDeviation="125" />
+          <feGaussianBlur stdDeviation="101" />
         </filter>
-        <radialGradient id={gradId1} cx="0.5" cy="0.3" r="0.6">
+        <radialGradient id={gradId1} cx="0.5" cy="0.5" r="0.5">
           <stop offset="0.21" stopColor="#974DFF" />
           <stop offset="0.72" stopColor="#FF72D0" />
-          <stop offset="1" stopColor="#FFDF61" />
+          <stop offset="1" stopColor="#FFB300" />
         </radialGradient>
-        <linearGradient id={gradId2} x1="0.2" y1="0.8" x2="0.8" y2="0.2">
-          <stop offset="0.14" stopColor="#40FFC7" />
-          <stop offset="0.53" stopColor="#61D8FF" />
+        <linearGradient id={gradId2} x1="0" y1="0.5" x2="1" y2="0.3">
+          <stop offset="0.15" stopColor="#00DB9D" />
           <stop offset="1" stopColor="#0A57FF" />
         </linearGradient>
       </defs>
+      {/* Large radial blob - positioned on the right side */}
       <ellipse
-        cx={width * 0.7}
-        cy={height * 0.15}
-        rx={width * 0.4}
-        ry={height * 0.3}
+        cx={isLinkedin ? width * 0.85 : width * 0.85}
+        cy={isLinkedin ? height * 0.2 : height * 0.15}
+        rx={width * 0.55}
+        ry={height * 0.65}
         fill={`url(#${gradId1})`}
         filter={`url(#${filterId1})`}
       />
+      {/* Small linear blob - positioned on the left/top */}
       <ellipse
-        cx={width * 0.25}
-        cy={height * 0.75}
-        rx={width * 0.45}
-        ry={height * 0.35}
+        cx={isLinkedin ? width * 0.05 : width * 0.05}
+        cy={isLinkedin ? height * 0.05 : height * 0.0}
+        rx={width * 0.3}
+        ry={height * 0.3}
         fill={`url(#${gradId2})`}
         filter={`url(#${filterId2})`}
       />
@@ -222,6 +228,73 @@ function QuoteIcon({ cx, cy, size, bgColor }: { cx: number; cy: number; size: nu
       >
         {"\u201C\u201D"}
       </text>
+    </g>
+  );
+}
+
+// Profile/document icon for dark insightful templates (extracted from original SVGs)
+function DarkProfileIcon({ cx, cy, size }: { cx: number; cy: number; size: number }) {
+  const r = size / 2;
+  // Scale factor from original icon (radius 23.5 for square, 37.5 for linkedin)
+  const s = r / 23.5;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill="#974DFF" />
+      {/* White document/paper shape */}
+      <rect
+        x={cx - 11 * s}
+        y={cy - 13.2 * s}
+        width={22 * s}
+        height={27.9 * s}
+        rx={2.2 * s}
+        fill="#F7F5F3"
+      />
+      {/* Decorative lines (pink diagonals, purple horizontal bars) via mask */}
+      <g opacity={0.85}>
+        <rect
+          x={cx + 4.5 * s}
+          y={cy - 13.5 * s}
+          width={1.5 * s}
+          height={9.6 * s}
+          rx={0.73 * s}
+          transform={`rotate(-45 ${cx + 4.5 * s} ${cy - 13.5 * s})`}
+          fill="#FF72D0"
+        />
+        <rect
+          x={cx - 4.8 * s}
+          y={cy + 4 * s}
+          width={1.47 * s}
+          height={9.55 * s}
+          rx={0.73 * s}
+          transform={`rotate(-90 ${cx - 4.8 * s} ${cy + 4 * s})`}
+          fill="#974DFF"
+        />
+        <rect
+          x={cx - 3.7 * s}
+          y={cy + 6.6 * s}
+          width={1.47 * s}
+          height={7.34 * s}
+          rx={0.73 * s}
+          transform={`rotate(-90 ${cx - 3.7 * s} ${cy + 6.6 * s})`}
+          fill="#974DFF"
+        />
+        <rect
+          x={cx + 12.5 * s}
+          y={cy + 8.5 * s}
+          width={1.49 * s}
+          height={9.6 * s}
+          rx={0.73 * s}
+          transform={`rotate(-135 ${cx + 12.5 * s} ${cy + 8.5 * s})`}
+          fill="#FF72D0"
+        />
+      </g>
+      {/* Person silhouette: head circle */}
+      <circle cx={cx} cy={cy - 5.9 * s} r={1.84 * s} fill="#974DFF" />
+      {/* Person silhouette: body */}
+      <path
+        d={`M${cx - 3.3 * s} ${cy - 0.73 * s}C${cx - 3.3 * s} ${cy - 2.56 * s} ${cx - 1.82 * s} ${cy - 4.04 * s} ${cx} ${cy - 4.04 * s}C${cx + 1.82 * s} ${cy - 4.04 * s} ${cx + 3.3 * s} ${cy - 2.56 * s} ${cx + 3.3 * s} ${cy - 0.73 * s}V${cy - 0.19 * s}C${cx + 3.3 * s} ${cy - 0.09 * s} ${cx + 3.22 * s} ${cy} ${cx + 3.11 * s} ${cy}H${cx - 3.11 * s}C${cx - 3.22 * s} ${cy} ${cx - 3.3 * s} ${cy - 0.09 * s} ${cx - 3.3 * s} ${cy - 0.19 * s}V${cy - 0.73 * s}Z`}
+        fill="#974DFF"
+      />
     </g>
   );
 }
@@ -303,6 +376,68 @@ function TagPill({ x, y, label, bgColor, strokeColor }: { x: number; y: number; 
   );
 }
 
+// Photo frame for dark insightful templates (two overlapping rounded photos)
+function DarkPhotoFrame({ width, height, seed }: { width: number; height: number; seed: string }) {
+  const isLinkedin = width > 700;
+
+  // Positions from original SVG templates
+  const frame = isLinkedin
+    ? { x: 833, y: 192, w: 240, h: 285 }
+    : { x: 139, y: 333, w: 180, h: 198 };
+
+  const photo1 = isLinkedin
+    ? { maskX: 756, maskY: 289.802, maskW: 233.866, maskH: 251.856, imgX: 541.922, imgY: 215.145, imgW: 623.508, imgH: 429.839 }
+    : { maskX: 63, maskY: 355, maskW: 155, maskH: 155, imgX: -71.3691, imgY: 304.061, imgW: 398.212, imgH: 274.523 };
+
+  const photo2 = isLinkedin
+    ? { maskW: 233.866, maskH: 233.866, originX: 1149.97, originY: 118, imgX: 542.734, imgY: 21.9648, imgW: 992.005, imgH: 724.05 }
+    : { maskW: 155, maskH: 155, originX: 392.713, originY: 355, imgX: -9.75, imgY: 291.35, imgW: 657.474, imgH: 479.881 };
+
+  const maskId1 = `photomask1_${seed}`;
+  const maskId2 = `photomask2_${seed}`;
+  const clipId1 = `photoclip1_${seed}`;
+  const clipId2 = `photoclip2_${seed}`;
+
+  return (
+    <>
+      {/* Outer stroked frame */}
+      <rect x={frame.x} y={frame.y} width={frame.w} height={frame.h} rx={20} stroke="#F7F5F3" fill="none" />
+
+      {/* Photo 1 (left) */}
+      <defs>
+        <clipPath id={clipId1}>
+          <rect x={photo1.maskX} y={photo1.maskY} width={photo1.maskW} height={photo1.maskH} rx={20} />
+        </clipPath>
+        <clipPath id={clipId2}>
+          <rect width={photo2.maskW} height={photo2.maskH} rx={20} transform={`matrix(-1 0 0 1 ${photo2.originX} ${photo2.originY})`} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId1})`}>
+        <image
+          href="/templates/photo1.jpg"
+          x={photo1.imgX}
+          y={photo1.imgY}
+          width={photo1.imgW}
+          height={photo1.imgH}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      </g>
+
+      {/* Photo 2 (right, mirrored) */}
+      <g clipPath={`url(#${clipId2})`}>
+        <image
+          href="/templates/photo2.jpg"
+          x={photo2.imgX}
+          y={photo2.imgY}
+          width={photo2.imgW}
+          height={photo2.imgH}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      </g>
+    </>
+  );
+}
+
 // Content frame (the rounded rectangle border)
 function ContentFrame({ x, y, width, height, bgColor, strokeColor, filled }: {
   x: number; y: number; width: number; height: number;
@@ -329,13 +464,17 @@ function calcMaxChars(fontSize: number, textAreaWidth: number): number {
 
 function calcTextLayout(template: TemplateConfig, text: string) {
   const isLinkedin = template.format === "linkedin";
+  const isDarkSquareInsightful = template.colorVariant === "dark" && template.postType === "insightful" && !isLinkedin;
   const maxFontSize = isLinkedin ? 42 : 34;
   const minFontSize = isLinkedin ? 18 : 14;
+
+  // Dark square insightful: reduce text area height to avoid overlapping photos (which start at y=333)
+  const textAreaHeight = isDarkSquareInsightful ? 180 : template.textArea.height;
 
   let fontSize = maxFontSize;
   let maxChars = calcMaxChars(fontSize, template.textArea.width);
   let wrappedLines = wrapText(text || "Your text here...", maxChars);
-  const maxLines = Math.floor(template.textArea.height / (maxFontSize * 1.35));
+  const maxLines = Math.floor(textAreaHeight / (maxFontSize * 1.35));
 
   while (wrappedLines.length > maxLines && fontSize > minFontSize) {
     fontSize -= 2;
@@ -345,14 +484,42 @@ function calcTextLayout(template: TemplateConfig, text: string) {
 
   const lineHeight = fontSize * 1.35;
   const totalTextHeight = wrappedLines.length * lineHeight;
-  const textStartY = template.textArea.y + (template.textArea.height - totalTextHeight) / 2 + fontSize;
+  const textStartY = template.textArea.y + (textAreaHeight - totalTextHeight) / 2 + fontSize;
 
   return { fontSize, wrappedLines, lineHeight, textStartY };
 }
 
-export function renderCardSvg(template: TemplateConfig, text: string): string {
+// Cache for base64-encoded photo data (loaded on first export)
+let photoCache: { photo1: string; photo2: string } | null = null;
+
+async function loadPhotosAsBase64(): Promise<{ photo1: string; photo2: string }> {
+  if (photoCache) return photoCache;
+
+  const [res1, res2] = await Promise.all([
+    fetch("/templates/photo1.jpg"),
+    fetch("/templates/photo2.jpg"),
+  ]);
+  const [blob1, blob2] = await Promise.all([res1.blob(), res2.blob()]);
+
+  const toDataUrl = (blob: Blob): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+
+  const [data1, data2] = await Promise.all([toDataUrl(blob1), toDataUrl(blob2)]);
+  photoCache = { photo1: data1, photo2: data2 };
+  return photoCache;
+}
+
+export async function renderCardSvg(template: TemplateConfig, text: string): Promise<string> {
   const { fontSize, wrappedLines, lineHeight, textStartY } = calcTextLayout(template, text);
-  return buildSvgString(template, wrappedLines, fontSize, lineHeight, textStartY);
+  let photoData: { photo1: string; photo2: string } | undefined;
+  if (template.colorVariant === "dark" && template.postType === "insightful") {
+    photoData = await loadPhotosAsBase64();
+  }
+  return buildSvgString(template, wrappedLines, fontSize, lineHeight, textStartY, photoData);
 }
 
 function buildSvgString(
@@ -360,7 +527,8 @@ function buildSvgString(
   lines: string[],
   fontSize: number,
   lineHeight: number,
-  textStartY: number
+  textStartY: number,
+  photoData?: { photo1: string; photo2: string }
 ): string {
   const { width, height, textColor, bgColor, tagLabel, postType, colorVariant } = template;
   const isLinkedin = width > 700;
@@ -370,33 +538,50 @@ function buildSvgString(
   const frameX = isLinkedin ? -56 : -63;
   const frameWidth = isLinkedin ? 1005 : 640;
 
-  // Icon position
-  const iconSize = isLinkedin ? 128 : 128;
-  const iconCx = isLinkedin ? width * 0.79 : width * 0.78;
-  const iconCy = isLinkedin ? height * 0.28 : height * 0.54;
+  const isDarkInsightful = isDark && postType === "insightful";
+
+  // Icon position - dark insightful uses positions from original SVGs
+  let iconSize: number;
+  let iconCx: number;
+  let iconCy: number;
+
+  if (isDarkInsightful) {
+    if (isLinkedin) {
+      iconSize = 75;
+      iconCx = 1072.5;
+      iconCy = 415.5;
+    } else {
+      iconSize = 47;
+      iconCx = 225.5;
+      iconCy = 533.5;
+    }
+  } else {
+    iconSize = 128;
+    iconCx = isLinkedin ? width * 0.79 : width * 0.78;
+    iconCy = isLinkedin ? height * 0.28 : height * 0.54;
+  }
 
   // Build gradient defs
   const gradientBg = isDark ? `
     <defs>
-      <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
-        <feGaussianBlur stdDeviation="150"/>
+      <filter id="blur1" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="200"/>
       </filter>
-      <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
-        <feGaussianBlur stdDeviation="125"/>
+      <filter id="blur2" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="101"/>
       </filter>
-      <radialGradient id="grad1" cx="0.5" cy="0.3" r="0.6">
+      <radialGradient id="grad1" cx="0.5" cy="0.5" r="0.5">
         <stop offset="0.21" stop-color="#974DFF"/>
         <stop offset="0.72" stop-color="#FF72D0"/>
-        <stop offset="1" stop-color="#FFDF61"/>
+        <stop offset="1" stop-color="#FFB300"/>
       </radialGradient>
-      <linearGradient id="grad2" x1="0.2" y1="0.8" x2="0.8" y2="0.2">
-        <stop offset="0.14" stop-color="#40FFC7"/>
-        <stop offset="0.53" stop-color="#61D8FF"/>
+      <linearGradient id="grad2" x1="0" y1="0.5" x2="1" y2="0.3">
+        <stop offset="0.15" stop-color="#00DB9D"/>
         <stop offset="1" stop-color="#0A57FF"/>
       </linearGradient>
     </defs>
-    <ellipse cx="${width * 0.7}" cy="${height * 0.15}" rx="${width * 0.4}" ry="${height * 0.3}" fill="url(#grad1)" filter="url(#blur1)"/>
-    <ellipse cx="${width * 0.25}" cy="${height * 0.75}" rx="${width * 0.45}" ry="${height * 0.35}" fill="url(#grad2)" filter="url(#blur2)"/>
+    <ellipse cx="${isLinkedin ? width * 0.85 : width * 0.85}" cy="${isLinkedin ? height * 0.2 : height * 0.15}" rx="${width * 0.55}" ry="${height * 0.65}" fill="url(#grad1)" filter="url(#blur1)"/>
+    <ellipse cx="${isLinkedin ? width * 0.05 : width * 0.05}" cy="${isLinkedin ? height * 0.05 : height * 0.0}" rx="${width * 0.3}" ry="${height * 0.3}" fill="url(#grad2)" filter="url(#blur2)"/>
   ` : `
     <defs>
       <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
@@ -420,20 +605,43 @@ function buildSvgString(
     <ellipse cx="${width * 0.15}" cy="${height * 0.05}" rx="${width * 0.25}" ry="${height * 0.2}" fill="url(#grad2)" filter="url(#blur2)"/>
   `;
 
-  // Icon - always use cream for inner fill
+  // Icon
   const iconFill = "#F7F5F3";
-  const iconSvg = postType === "poll" ? `
-    <circle cx="${iconCx}" cy="${iconCy}" r="${iconSize / 2}" fill="#FFB300"/>
+  const r = iconSize / 2;
+  const s = r / 23.5; // scale factor for dark profile icon
+
+  let iconSvg: string;
+  if (postType === "poll") {
+    iconSvg = `
+    <circle cx="${iconCx}" cy="${iconCy}" r="${r}" fill="#FFB300"/>
     <rect x="${iconCx - iconSize * 0.33}" y="${iconCy - iconSize * 0.22}" width="${iconSize * 0.49}" height="${iconSize * 0.46}" rx="${iconSize * 0.05}" fill="#FFDF61"/>
     <rect x="${iconCx - iconSize * 0.23}" y="${iconCy - iconSize * 0.35}" width="${iconSize * 0.46}" height="${iconSize * 0.43}" rx="${iconSize * 0.05}" fill="${iconFill}"/>
     <path d="${iconCx - iconSize * 0.23} ${iconCy + iconSize * 0.2}V${iconCy - iconSize * 0.05}C${iconCx - iconSize * 0.23} ${iconCy - iconSize * 0.13} ${iconCx - iconSize * 0.16} ${iconCy - iconSize * 0.2} ${iconCx - iconSize * 0.08} ${iconCy - iconSize * 0.2}H${iconCx + iconSize * 0.08}C${iconCx + iconSize * 0.18} ${iconCy - iconSize * 0.2} ${iconCx + iconSize * 0.2} ${iconCy - iconSize * 0.04} ${iconCx + iconSize * 0.12} ${iconCy + iconSize * 0.04}L${iconCx - iconSize * 0.08} ${iconCy + iconSize * 0.23}C${iconCx - iconSize * 0.16} ${iconCy + iconSize * 0.3} ${iconCx - iconSize * 0.23} ${iconCy + iconSize * 0.25} ${iconCx - iconSize * 0.23} ${iconCy + iconSize * 0.2}Z" fill="${iconFill}"/>
     <text x="${iconCx}" y="${iconCy - iconSize * 0.05}" text-anchor="middle" dominant-baseline="central" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="${iconSize * 0.38}" fill="#0A0632">?</text>
-  ` : `
-    <circle cx="${iconCx}" cy="${iconCy}" r="${iconSize / 2}" fill="#0A57FF"/>
+    `;
+  } else if (isDarkInsightful) {
+    // Profile/document icon from original dark SVGs
+    iconSvg = `
+    <circle cx="${iconCx}" cy="${iconCy}" r="${r}" fill="#974DFF"/>
+    <rect x="${iconCx - 11 * s}" y="${iconCy - 13.2 * s}" width="${22 * s}" height="${27.9 * s}" rx="${2.2 * s}" fill="#F7F5F3"/>
+    <g opacity="0.85">
+      <rect x="${iconCx + 4.5 * s}" y="${iconCy - 13.5 * s}" width="${1.5 * s}" height="${9.6 * s}" rx="${0.73 * s}" transform="rotate(-45 ${iconCx + 4.5 * s} ${iconCy - 13.5 * s})" fill="#FF72D0"/>
+      <rect x="${iconCx - 4.8 * s}" y="${iconCy + 4 * s}" width="${1.47 * s}" height="${9.55 * s}" rx="${0.73 * s}" transform="rotate(-90 ${iconCx - 4.8 * s} ${iconCy + 4 * s})" fill="#974DFF"/>
+      <rect x="${iconCx - 3.7 * s}" y="${iconCy + 6.6 * s}" width="${1.47 * s}" height="${7.34 * s}" rx="${0.73 * s}" transform="rotate(-90 ${iconCx - 3.7 * s} ${iconCy + 6.6 * s})" fill="#974DFF"/>
+      <rect x="${iconCx + 12.5 * s}" y="${iconCy + 8.5 * s}" width="${1.49 * s}" height="${9.6 * s}" rx="${0.73 * s}" transform="rotate(-135 ${iconCx + 12.5 * s} ${iconCy + 8.5 * s})" fill="#FF72D0"/>
+    </g>
+    <circle cx="${iconCx}" cy="${iconCy - 5.9 * s}" r="${1.84 * s}" fill="#974DFF"/>
+    <path d="M${iconCx - 3.3 * s} ${iconCy - 0.73 * s}C${iconCx - 3.3 * s} ${iconCy - 2.56 * s} ${iconCx - 1.82 * s} ${iconCy - 4.04 * s} ${iconCx} ${iconCy - 4.04 * s}C${iconCx + 1.82 * s} ${iconCy - 4.04 * s} ${iconCx + 3.3 * s} ${iconCy - 2.56 * s} ${iconCx + 3.3 * s} ${iconCy - 0.73 * s}V${iconCy - 0.19 * s}C${iconCx + 3.3 * s} ${iconCy - 0.09 * s} ${iconCx + 3.22 * s} ${iconCy}H${iconCx - 3.11 * s}C${iconCx - 3.22 * s} ${iconCy} ${iconCx - 3.3 * s} ${iconCy - 0.09 * s} ${iconCx - 3.3 * s} ${iconCy - 0.19 * s}V${iconCy - 0.73 * s}Z" fill="#974DFF"/>
+    `;
+  } else {
+    // Quote icon for light insightful
+    iconSvg = `
+    <circle cx="${iconCx}" cy="${iconCy}" r="${r}" fill="#0A57FF"/>
     <rect x="${iconCx - iconSize * 0.26}" y="${iconCy - iconSize * 0.26}" width="${iconSize * 0.52}" height="${iconSize * 0.48}" rx="${iconSize * 0.05}" fill="${iconFill}"/>
     <path d="M${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.32}V${iconCy + iconSize * 0.05}C${iconCx - iconSize * 0.19} ${iconCy - iconSize * 0.03} ${iconCx - iconSize * 0.12} ${iconCy - iconSize * 0.1} ${iconCx - iconSize * 0.05} ${iconCy - iconSize * 0.1}H${iconCx + iconSize * 0.14}C${iconCx + iconSize * 0.26} ${iconCy - iconSize * 0.1} ${iconCx + iconSize * 0.32} ${iconCy + iconSize * 0.07} ${iconCx + iconSize * 0.22} ${iconCy + iconSize * 0.17}L${iconCx - iconSize * 0.02} ${iconCy + iconSize * 0.38}C${iconCx - iconSize * 0.12} ${iconCy + iconSize * 0.46} ${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.38} ${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.32}Z" fill="${iconFill}"/>
     <text x="${iconCx}" y="${iconCy - iconSize * 0.12}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-weight="bold" font-size="${iconSize * 0.35}" fill="#0A0632">\u201C\u201D</text>
-  `;
+    `;
+  }
 
   // Tag pill dimensions
   const tagWidth = tagLabel.length * 9 + 28;
@@ -455,8 +663,11 @@ function buildSvgString(
   }).join("\n    ");
 
   // Logo + brand (original SVG paths)
-  const logoY = height - 145;
-  const logoTx = template.textArea.x - 50;
+  // Dark square puts logo at bottom-right (x=419) and lower (y=537), dark linkedin stays bottom-left
+  const isDarkSquareInsightful = isDarkInsightful && !isLinkedin;
+  const logoY = isDarkSquareInsightful ? height - 90 : height - 145;
+  const logoBaseX = isDarkSquareInsightful ? 419 : template.textArea.x;
+  const logoTx = logoBaseX - 50;
   const logoTy = logoY - 486;
   const logoSvg = `
     <g transform="translate(${logoTx}, ${logoTy})">
@@ -476,15 +687,43 @@ function buildSvgString(
     </g>
   `;
 
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">
+  // Photo frame for dark insightful templates
+  let photoFrameSvg = "";
+  if (isDark && postType === "insightful" && photoData) {
+    const frame = isLinkedin
+      ? { x: 833, y: 192, w: 240, h: 285 }
+      : { x: 139, y: 333, w: 180, h: 198 };
+    const p1 = isLinkedin
+      ? { maskX: 756, maskY: 289.802, maskW: 233.866, maskH: 251.856, imgX: 541.922, imgY: 215.145, imgW: 623.508, imgH: 429.839 }
+      : { maskX: 63, maskY: 355, maskW: 155, maskH: 155, imgX: -71.3691, imgY: 304.061, imgW: 398.212, imgH: 274.523 };
+    const p2 = isLinkedin
+      ? { maskW: 233.866, maskH: 233.866, originX: 1149.97, originY: 118, imgX: 542.734, imgY: 21.9648, imgW: 992.005, imgH: 724.05 }
+      : { maskW: 155, maskH: 155, originX: 392.713, originY: 355, imgX: -9.75, imgY: 291.35, imgW: 657.474, imgH: 479.881 };
+    photoFrameSvg = `
+      <rect x="${frame.x}" y="${frame.y}" width="${frame.w}" height="${frame.h}" rx="20" stroke="#F7F5F3" fill="none"/>
+      <defs>
+        <clipPath id="photoclip1"><rect x="${p1.maskX}" y="${p1.maskY}" width="${p1.maskW}" height="${p1.maskH}" rx="20"/></clipPath>
+        <clipPath id="photoclip2"><rect width="${p2.maskW}" height="${p2.maskH}" rx="20" transform="matrix(-1 0 0 1 ${p2.originX} ${p2.originY})"/></clipPath>
+      </defs>
+      <g clip-path="url(#photoclip1)">
+        <image href="${photoData.photo1}" x="${p1.imgX}" y="${p1.imgY}" width="${p1.imgW}" height="${p1.imgH}" preserveAspectRatio="xMidYMid slice"/>
+      </g>
+      <g clip-path="url(#photoclip2)">
+        <image href="${photoData.photo2}" x="${p2.imgX}" y="${p2.imgY}" width="${p2.imgW}" height="${p2.imgH}" preserveAspectRatio="xMidYMid slice"/>
+      </g>
+    `;
+  }
+
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <rect width="${width}" height="${height}" fill="${bgColor}"/>
   ${gradientBg}
   <rect x="${frameX}" y="50" width="${frameWidth}" height="527" rx="29.64" fill="${isDark ? 'none' : bgColor}" stroke="${isDark ? bgColor : textColor}" stroke-width="1"/>
   <rect x="50.5" y="27.5" width="${tagWidth}" height="45" rx="14.5" fill="${bgColor}" stroke="${textColor}" stroke-width="1"/>
   <text x="${50.5 + tagWidth / 2}" y="54" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="13" fill="${textColor}" letter-spacing="0.5">${tagLabel}</text>
-  ${iconSvg}
   ${textSvg}
   ${logoSvg}
+  ${photoFrameSvg}
+  ${iconSvg}
   ${decoElements}
 </svg>`;
 }
@@ -505,13 +744,33 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
   // Tag pill dimensions
   const tagWidth = tagLabel.length * 9 + 28;
 
-  // Logo position
-  const logoY = height - 145;
+  // Logo position - dark square puts logo at bottom-right and lower, otherwise bottom-left
+  const isDarkSquareInsightful = isDark && !isLinkedin && postType === "insightful";
+  const logoY = isDarkSquareInsightful ? height - 90 : height - 145;
+  const logoX = isDarkSquareInsightful ? 419 : template.textArea.x;
 
-  // Icon position
-  const iconSize = 128;
-  const iconCx = isLinkedin ? width * 0.79 : width * 0.78;
-  const iconCy = isLinkedin ? height * 0.28 : height * 0.54;
+  // Icon position - dark insightful uses different icon position (from original SVGs)
+  const isDarkInsightful = isDark && postType === "insightful";
+  let iconSize: number;
+  let iconCx: number;
+  let iconCy: number;
+
+  if (isDarkInsightful) {
+    // Original dark template icon positions (between/below photos, not overlapping)
+    if (isLinkedin) {
+      iconSize = 75; // radius 37.5 in original
+      iconCx = 1072.5;
+      iconCy = 415.5;
+    } else {
+      iconSize = 47; // radius 23.5 in original
+      iconCx = 225.5;
+      iconCy = 533.5;
+    }
+  } else {
+    iconSize = 128;
+    iconCx = isLinkedin ? width * 0.79 : width * 0.78;
+    iconCy = isLinkedin ? height * 0.28 : height * 0.54;
+  }
 
   // Deterministic seed from template properties to avoid hydration mismatch
   const seed = `${template.id}_${width}_${height}`;
@@ -569,11 +828,18 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
       ))}
 
       {/* Migbirds logo (original paths) */}
-      <MigbirdsOriginalLogo x={template.textArea.x} y={logoY} textColor={textColor} />
+      <MigbirdsOriginalLogo x={logoX} y={logoY} textColor={textColor} />
 
-      {/* Icon */}
+      {/* Photo frame (dark insightful only) - rendered before icon so icon appears on top */}
+      {isDarkInsightful && (
+        <DarkPhotoFrame width={width} height={height} seed={seed} />
+      )}
+
+      {/* Icon - rendered after photo frame so it's on top of any frame lines */}
       {postType === "poll" ? (
         <QuestionIcon cx={iconCx} cy={iconCy} size={iconSize} bgColor="#F7F5F3" />
+      ) : isDarkInsightful ? (
+        <DarkProfileIcon cx={iconCx} cy={iconCy} size={iconSize} />
       ) : (
         <QuoteIcon cx={iconCx} cy={iconCy} size={iconSize} bgColor="#F7F5F3" />
       )}
