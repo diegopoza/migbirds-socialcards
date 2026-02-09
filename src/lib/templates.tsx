@@ -502,15 +502,25 @@ function calcTextLayout(template: TemplateConfig, text: string) {
   let fontSize = maxFontSize;
   let maxChars = calcMaxChars(fontSize, textAreaWidth);
   let wrappedLines = wrapText(text || "Your text here...", maxChars);
-  const maxLines = Math.floor(textAreaHeight / (maxFontSize * 1.35));
+  let lineHeight = fontSize * 1.35;
+  let maxLines = Math.floor(textAreaHeight / lineHeight);
 
   while (wrappedLines.length > maxLines && fontSize > minFontSize) {
     fontSize -= 2;
+    lineHeight = fontSize * 1.35;
     maxChars = calcMaxChars(fontSize, textAreaWidth);
     wrappedLines = wrapText(text || "Your text here...", maxChars);
+    maxLines = Math.floor(textAreaHeight / lineHeight);
   }
 
-  const lineHeight = fontSize * 1.35;
+  // Truncate if text still exceeds available space at minimum font size
+  if (wrappedLines.length > maxLines) {
+    wrappedLines = wrappedLines.slice(0, maxLines);
+    // Add ellipsis to last visible line
+    const lastLine = wrappedLines[maxLines - 1];
+    wrappedLines[maxLines - 1] = lastLine.slice(0, -3) + "...";
+  }
+
   const totalTextHeight = wrappedLines.length * lineHeight;
   const textStartY = textAreaY + (textAreaHeight - totalTextHeight) / 2 + fontSize;
 
