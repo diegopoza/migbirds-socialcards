@@ -465,11 +465,12 @@ function calcMaxChars(fontSize: number, textAreaWidth: number): number {
 function calcTextLayout(template: TemplateConfig, text: string) {
   const isLinkedin = template.format === "linkedin";
   const isDarkSquareInsightful = template.colorVariant === "dark" && template.postType === "insightful" && !isLinkedin;
-  const maxFontSize = isLinkedin ? 42 : 34;
+  const maxFontSize = isLinkedin ? 42 : (isDarkSquareInsightful ? 38 : 34);
   const minFontSize = isLinkedin ? 18 : 14;
 
-  // Dark square insightful: reduce text area height to avoid overlapping photos (which start at y=333)
-  const textAreaHeight = isDarkSquareInsightful ? 180 : template.textArea.height;
+  // Dark square insightful: use expanded text area from y=80 to y=320 (photos start at y=333)
+  const textAreaY = isDarkSquareInsightful ? 80 : template.textArea.y;
+  const textAreaHeight = isDarkSquareInsightful ? 240 : template.textArea.height;
 
   let fontSize = maxFontSize;
   let maxChars = calcMaxChars(fontSize, template.textArea.width);
@@ -484,7 +485,7 @@ function calcTextLayout(template: TemplateConfig, text: string) {
 
   const lineHeight = fontSize * 1.35;
   const totalTextHeight = wrappedLines.length * lineHeight;
-  const textStartY = template.textArea.y + (textAreaHeight - totalTextHeight) / 2 + fontSize;
+  const textStartY = textAreaY + (textAreaHeight - totalTextHeight) / 2 + fontSize;
 
   return { fontSize, wrappedLines, lineHeight, textStartY };
 }
