@@ -44,7 +44,16 @@ function wrapText(text: string, maxCharsPerLine: number): string[] {
   let currentLine = "";
 
   for (const word of words) {
-    if (currentLine.length + word.length + 1 <= maxCharsPerLine) {
+    // Break long words that exceed line width
+    if (word.length > maxCharsPerLine) {
+      if (currentLine) lines.push(currentLine);
+      let remaining = word;
+      while (remaining.length > maxCharsPerLine) {
+        lines.push(remaining.slice(0, maxCharsPerLine));
+        remaining = remaining.slice(maxCharsPerLine);
+      }
+      currentLine = remaining;
+    } else if (currentLine.length + word.length + 1 <= maxCharsPerLine) {
       currentLine += (currentLine ? " " : "") + word;
     } else {
       if (currentLine) lines.push(currentLine);
