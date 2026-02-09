@@ -438,6 +438,32 @@ function DarkPhotoFrame({ width, height, seed }: { width: number; height: number
   );
 }
 
+// Photo frame for light insightful wide template (single rounded photo on the right)
+function LightPhotoFrame({ seed }: { seed: string }) {
+  const clipId = `lightphotoclip_${seed}`;
+  // From original SVG: mask at x=784, y=110, w=352.757, h=407, rx=40
+  // Photo rect: w=558, h=570, matrix(-1 0 0 1 1162 96) → effective x=604, y=96
+  return (
+    <>
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={784} y={110} width={352.757} height={407} rx={40} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <image
+          href="/templates/photo_light.jpg"
+          x={604}
+          y={96}
+          width={558}
+          height={570}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      </g>
+    </>
+  );
+}
+
 // Content frame (the rounded rectangle border)
 function ContentFrame({ x, y, width, height, bgColor, strokeColor, filled }: {
   x: number; y: number; width: number; height: number;
@@ -492,36 +518,47 @@ function calcTextLayout(template: TemplateConfig, text: string) {
 }
 
 // Cache for base64-encoded photo data (loaded on first export)
-let photoCache: { photo1: string; photo2: string } | null = null;
+let darkPhotoCache: { photo1: string; photo2: string } | null = null;
+let lightPhotoCache: string | null = null;
 
-async function loadPhotosAsBase64(): Promise<{ photo1: string; photo2: string }> {
-  if (photoCache) return photoCache;
+const toDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
 
+async function loadDarkPhotos(): Promise<{ photo1: string; photo2: string }> {
+  if (darkPhotoCache) return darkPhotoCache;
   const [res1, res2] = await Promise.all([
     fetch("/templates/photo1.jpg"),
     fetch("/templates/photo2.jpg"),
   ]);
   const [blob1, blob2] = await Promise.all([res1.blob(), res2.blob()]);
-
-  const toDataUrl = (blob: Blob): Promise<string> =>
-    new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-
   const [data1, data2] = await Promise.all([toDataUrl(blob1), toDataUrl(blob2)]);
-  photoCache = { photo1: data1, photo2: data2 };
-  return photoCache;
+  darkPhotoCache = { photo1: data1, photo2: data2 };
+  return darkPhotoCache;
+}
+
+async function loadLightPhoto(): Promise<string> {
+  if (lightPhotoCache) return lightPhotoCache;
+  const res = await fetch("/templates/photo_light.jpg");
+  const blob = await res.blob();
+  lightPhotoCache = await toDataUrl(blob);
+  return lightPhotoCache;
 }
 
 export async function renderCardSvg(template: TemplateConfig, text: string): Promise<string> {
   const { fontSize, wrappedLines, lineHeight, textStartY } = calcTextLayout(template, text);
-  let photoData: { photo1: string; photo2: string } | undefined;
+  let darkPhotoData: { photo1: string; photo2: string } | undefined;
+  let lightPhotoData: string | undefined;
   if (template.colorVariant === "dark" && template.postType === "insightful") {
-    photoData = await loadPhotosAsBase64();
+    darkPhotoData = await loadDarkPhotos();
   }
-  return buildSvgString(template, wrappedLines, fontSize, lineHeight, textStartY, photoData);
+  if (template.colorVariant === "light" && template.postType === "insightful" && template.format === "linkedin") {
+    lightPhotoData = await loadLightPhoto();
+  }
+  return buildSvgString(template, wrappedLines, fontSize, lineHeight, textStartY, darkPhotoData, lightPhotoData);
 }
 
 function buildSvgString(
@@ -530,7 +567,8 @@ function buildSvgString(
   fontSize: number,
   lineHeight: number,
   textStartY: number,
-  photoData?: { photo1: string; photo2: string }
+  darkPhotoData?: { photo1: string; photo2: string },
+  lightPhotoData?: string
 ): string {
   const { width, height, textColor, bgColor, tagLabel, postType, colorVariant } = template;
   const isLinkedin = width > 700;
@@ -691,7 +729,7 @@ function buildSvgString(
 
   // Photo frame for dark insightful templates
   let photoFrameSvg = "";
-  if (isDark && postType === "insightful" && photoData) {
+  if (isDark && postType === "insightful" && darkPhotoData) {
     const frame = isLinkedin
       ? { x: 833, y: 192, w: 240, h: 285 }
       : { x: 139, y: 333, w: 180, h: 198 };
@@ -708,10 +746,22 @@ function buildSvgString(
         <clipPath id="photoclip2"><rect width="${p2.maskW}" height="${p2.maskH}" rx="20" transform="matrix(-1 0 0 1 ${p2.originX} ${p2.originY})"/></clipPath>
       </defs>
       <g clip-path="url(#photoclip1)">
-        <image href="${photoData.photo1}" x="${p1.imgX}" y="${p1.imgY}" width="${p1.imgW}" height="${p1.imgH}" preserveAspectRatio="xMidYMid slice"/>
+        <image href="${darkPhotoData.photo1}" x="${p1.imgX}" y="${p1.imgY}" width="${p1.imgW}" height="${p1.imgH}" preserveAspectRatio="xMidYMid slice"/>
       </g>
       <g clip-path="url(#photoclip2)">
-        <image href="${photoData.photo2}" x="${p2.imgX}" y="${p2.imgY}" width="${p2.imgW}" height="${p2.imgH}" preserveAspectRatio="xMidYMid slice"/>
+        <image href="${darkPhotoData.photo2}" x="${p2.imgX}" y="${p2.imgY}" width="${p2.imgW}" height="${p2.imgH}" preserveAspectRatio="xMidYMid slice"/>
+      </g>
+    `;
+  }
+
+  // Photo frame for light insightful wide template
+  if (!isDark && postType === "insightful" && isLinkedin && lightPhotoData) {
+    photoFrameSvg = `
+      <defs>
+        <clipPath id="lightphotoclip"><rect x="784" y="110" width="352.757" height="407" rx="40"/></clipPath>
+      </defs>
+      <g clip-path="url(#lightphotoclip)">
+        <image href="${lightPhotoData}" x="604" y="96" width="558" height="570" preserveAspectRatio="xMidYMid slice"/>
       </g>
     `;
   }
@@ -832,9 +882,12 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
       {/* Migbirds logo (original paths) */}
       <MigbirdsOriginalLogo x={logoX} y={logoY} textColor={textColor} />
 
-      {/* Photo frame (dark insightful only) - rendered before icon so icon appears on top */}
+      {/* Photo frames - rendered before icon so icon appears on top */}
       {isDarkInsightful && (
         <DarkPhotoFrame width={width} height={height} seed={seed} />
+      )}
+      {!isDark && postType === "insightful" && isLinkedin && (
+        <LightPhotoFrame seed={seed} />
       )}
 
       {/* Icon - rendered after photo frame so it's on top of any frame lines */}
