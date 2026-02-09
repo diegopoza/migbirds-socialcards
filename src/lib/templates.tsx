@@ -673,14 +673,16 @@ function buildSvgString(
     <circle cx="${iconCx}" cy="${iconCy - 5.9 * s}" r="${1.84 * s}" fill="#974DFF"/>
     <path d="M${iconCx - 3.3 * s} ${iconCy - 0.73 * s}C${iconCx - 3.3 * s} ${iconCy - 2.56 * s} ${iconCx - 1.82 * s} ${iconCy - 4.04 * s} ${iconCx} ${iconCy - 4.04 * s}C${iconCx + 1.82 * s} ${iconCy - 4.04 * s} ${iconCx + 3.3 * s} ${iconCy - 2.56 * s} ${iconCx + 3.3 * s} ${iconCy - 0.73 * s}V${iconCy - 0.19 * s}C${iconCx + 3.3 * s} ${iconCy - 0.09 * s} ${iconCx + 3.22 * s} ${iconCy}H${iconCx - 3.11 * s}C${iconCx - 3.22 * s} ${iconCy} ${iconCx - 3.3 * s} ${iconCy - 0.09 * s} ${iconCx - 3.3 * s} ${iconCy - 0.19 * s}V${iconCy - 0.73 * s}Z" fill="#974DFF"/>
     `;
-  } else {
-    // Quote icon for light insightful
+  } else if (!isLinkedin || postType !== "insightful") {
+    // Quote icon for light insightful square (not shown on light wide — photo replaces it)
     iconSvg = `
     <circle cx="${iconCx}" cy="${iconCy}" r="${r}" fill="#0A57FF"/>
     <rect x="${iconCx - iconSize * 0.26}" y="${iconCy - iconSize * 0.26}" width="${iconSize * 0.52}" height="${iconSize * 0.48}" rx="${iconSize * 0.05}" fill="${iconFill}"/>
     <path d="M${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.32}V${iconCy + iconSize * 0.05}C${iconCx - iconSize * 0.19} ${iconCy - iconSize * 0.03} ${iconCx - iconSize * 0.12} ${iconCy - iconSize * 0.1} ${iconCx - iconSize * 0.05} ${iconCy - iconSize * 0.1}H${iconCx + iconSize * 0.14}C${iconCx + iconSize * 0.26} ${iconCy - iconSize * 0.1} ${iconCx + iconSize * 0.32} ${iconCy + iconSize * 0.07} ${iconCx + iconSize * 0.22} ${iconCy + iconSize * 0.17}L${iconCx - iconSize * 0.02} ${iconCy + iconSize * 0.38}C${iconCx - iconSize * 0.12} ${iconCy + iconSize * 0.46} ${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.38} ${iconCx - iconSize * 0.19} ${iconCy + iconSize * 0.32}Z" fill="${iconFill}"/>
     <text x="${iconCx}" y="${iconCy - iconSize * 0.12}" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-weight="bold" font-size="${iconSize * 0.35}" fill="#0A0632">\u201C\u201D</text>
     `;
+  } else {
+    iconSvg = "";
   }
 
   // Tag pill dimensions
@@ -891,13 +893,14 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
       )}
 
       {/* Icon - rendered after photo frame so it's on top of any frame lines */}
+      {/* No icon for light insightful wide (photo replaces it) */}
       {postType === "poll" ? (
         <QuestionIcon cx={iconCx} cy={iconCy} size={iconSize} bgColor="#F7F5F3" />
       ) : isDarkInsightful ? (
         <DarkProfileIcon cx={iconCx} cy={iconCy} size={iconSize} />
-      ) : (
+      ) : (!isLinkedin || postType !== "insightful") ? (
         <QuoteIcon cx={iconCx} cy={iconCy} size={iconSize} bgColor="#F7F5F3" />
-      )}
+      ) : null}
 
       {/* Decorative elements */}
       <DecoElements width={width} height={height} variant={isDark ? "dark" : postType} />
