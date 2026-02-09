@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# large original SVG templates (reference only, not used at runtime)
+public/templates/Migbirds_Post1_Linkedin.svg
+public/templates/Migbirds_Post2_Linkedin.svg
+public/templates/Migbirds_Post2_Square.svg
