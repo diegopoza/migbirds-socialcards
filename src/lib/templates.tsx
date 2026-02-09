@@ -458,7 +458,7 @@ function ContentFrame({ x, y, width, height, bgColor, strokeColor, filled }: {
 }
 
 function calcMaxChars(fontSize: number, textAreaWidth: number): number {
-  const avgCharWidth = fontSize * 0.58;
+  const avgCharWidth = fontSize * 0.62;
   return Math.floor(textAreaWidth / avgCharWidth);
 }
 
@@ -663,10 +663,10 @@ function buildSvgString(
   }).join("\n    ");
 
   // Logo + brand (original SVG paths)
-  // Dark square puts logo at bottom-right (x=419) and lower (y=537), dark linkedin stays bottom-left
+  // Dark square puts logo at bottom-right inside frame with padding, dark linkedin stays bottom-left
   const isDarkSquareInsightful = isDarkInsightful && !isLinkedin;
-  const logoY = isDarkSquareInsightful ? height - 90 : height - 145;
-  const logoBaseX = isDarkSquareInsightful ? 419 : template.textArea.x;
+  const logoY = isDarkSquareInsightful ? 519 : height - 145;
+  const logoBaseX = isDarkSquareInsightful ? 393 : template.textArea.x;
   const logoTx = logoBaseX - 50;
   const logoTy = logoY - 486;
   const logoSvg = `
@@ -744,10 +744,10 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
   // Tag pill dimensions
   const tagWidth = tagLabel.length * 9 + 28;
 
-  // Logo position - dark square puts logo at bottom-right and lower, otherwise bottom-left
+  // Logo position - dark square puts logo at bottom-right inside frame with padding, otherwise bottom-left
   const isDarkSquareInsightful = isDark && !isLinkedin && postType === "insightful";
-  const logoY = isDarkSquareInsightful ? height - 90 : height - 145;
-  const logoX = isDarkSquareInsightful ? 419 : template.textArea.x;
+  const logoY = isDarkSquareInsightful ? 519 : height - 145;
+  const logoX = isDarkSquareInsightful ? 393 : template.textArea.x;
 
   // Icon position - dark insightful uses different icon position (from original SVGs)
   const isDarkInsightful = isDark && postType === "insightful";
