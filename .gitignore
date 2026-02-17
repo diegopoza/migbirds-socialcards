@@ -44,3 +44,6 @@ next-env.d.ts
 public/templates/Migbirds_Post1_Linkedin.svg
 public/templates/Migbirds_Post2_Linkedin.svg
 public/templates/Migbirds_Post2_Square.svg
+
+# original unoptimized people photos (optimized copies in public/people/)
+/people

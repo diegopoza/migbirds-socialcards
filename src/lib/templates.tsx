@@ -448,10 +448,8 @@ function DarkPhotoFrame({ width, height, seed }: { width: number; height: number
 }
 
 // Photo frame for light insightful wide template (single rounded photo on the right)
-function LightPhotoFrame({ seed }: { seed: string }) {
+function LightPhotoFrame({ seed, photoSrc }: { seed: string; photoSrc: string }) {
   const clipId = `lightphotoclip_${seed}`;
-  // From original SVG: mask at x=784, y=110, w=352.757, h=407, rx=40
-  // Photo rect: w=558, h=570, matrix(-1 0 0 1 1162 96) → effective x=604, y=96
   return (
     <>
       <defs>
@@ -461,7 +459,7 @@ function LightPhotoFrame({ seed }: { seed: string }) {
       </defs>
       <g clipPath={`url(#${clipId})`}>
         <image
-          href="/templates/photo_light.jpg"
+          href={photoSrc}
           x={604}
           y={96}
           width={558}
@@ -538,7 +536,7 @@ function calcTextLayout(template: TemplateConfig, text: string) {
 
 // Cache for base64-encoded photo data (loaded on first export)
 let darkPhotoCache: { photo1: string; photo2: string } | null = null;
-let lightPhotoCache: string | null = null;
+const lightPhotoCache: Record<string, string> = {};
 
 const toDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve) => {
@@ -559,23 +557,23 @@ async function loadDarkPhotos(): Promise<{ photo1: string; photo2: string }> {
   return darkPhotoCache;
 }
 
-async function loadLightPhoto(): Promise<string> {
-  if (lightPhotoCache) return lightPhotoCache;
-  const res = await fetch("/templates/photo_light.jpg");
+async function loadLightPhoto(photoSrc: string): Promise<string> {
+  if (lightPhotoCache[photoSrc]) return lightPhotoCache[photoSrc];
+  const res = await fetch(photoSrc);
   const blob = await res.blob();
-  lightPhotoCache = await toDataUrl(blob);
-  return lightPhotoCache;
+  lightPhotoCache[photoSrc] = await toDataUrl(blob);
+  return lightPhotoCache[photoSrc];
 }
 
-export async function renderCardSvg(template: TemplateConfig, text: string): Promise<string> {
+export async function renderCardSvg(template: TemplateConfig, text: string, selectedPhoto?: string): Promise<string> {
   const { fontSize, wrappedLines, lineHeight, textStartY } = calcTextLayout(template, text);
   let darkPhotoData: { photo1: string; photo2: string } | undefined;
   let lightPhotoData: string | undefined;
   if (template.colorVariant === "dark" && template.postType === "insightful") {
     darkPhotoData = await loadDarkPhotos();
   }
-  if (template.colorVariant === "light" && template.postType === "insightful" && template.format === "linkedin") {
-    lightPhotoData = await loadLightPhoto();
+  if (template.colorVariant === "light" && template.postType === "insightful" && template.format === "linkedin" && selectedPhoto) {
+    lightPhotoData = await loadLightPhoto(selectedPhoto);
   }
   return buildSvgString(template, wrappedLines, fontSize, lineHeight, textStartY, darkPhotoData, lightPhotoData);
 }
@@ -802,7 +800,7 @@ function buildSvgString(
 }
 
 // React component for preview
-export function CardPreview({ template, text }: { template: TemplateConfig; text: string }) {
+export function CardPreview({ template, text, selectedPhoto }: { template: TemplateConfig; text: string; selectedPhoto?: string }) {
   const isLinkedin = template.format === "linkedin";
   const isDark = template.colorVariant === "dark";
   const { width, height, textColor, bgColor, tagLabel, postType } = template;
@@ -907,8 +905,8 @@ export function CardPreview({ template, text }: { template: TemplateConfig; text
       {isDarkInsightful && (
         <DarkPhotoFrame width={width} height={height} seed={seed} />
       )}
-      {!isDark && postType === "insightful" && isLinkedin && (
-        <LightPhotoFrame seed={seed} />
+      {!isDark && postType === "insightful" && isLinkedin && selectedPhoto && (
+        <LightPhotoFrame seed={seed} photoSrc={selectedPhoto} />
       )}
 
       {/* Icon - rendered after photo frame so it's on top of any frame lines */}

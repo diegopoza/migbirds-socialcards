@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PostType, CardFormat, ColorVariant, getTemplate } from "@/lib/types";
+import { PostType, CardFormat, ColorVariant, getTemplate, PEOPLE_PHOTOS } from "@/lib/types";
 import { CardPreview } from "@/lib/templates";
 import CardTypeSelector from "@/components/CardTypeSelector";
 import TextEditor from "@/components/TextEditor";
@@ -12,6 +12,7 @@ export default function Home() {
   const [format, setFormat] = useState<CardFormat>("linkedin");
   const [colorVariant, setColorVariant] = useState<ColorVariant>("light");
   const [text, setText] = useState("");
+  const [selectedPhoto, setSelectedPhoto] = useState(PEOPLE_PHOTOS[0].src);
 
   // Reset color variant when switching to poll (poll is always light)
   const handlePostTypeChange = (type: PostType) => {
@@ -69,9 +70,11 @@ export default function Home() {
               postType={postType}
               format={format}
               colorVariant={colorVariant}
+              selectedPhoto={selectedPhoto}
               onPostTypeChange={handlePostTypeChange}
               onFormatChange={setFormat}
               onColorVariantChange={setColorVariant}
+              onPhotoChange={setSelectedPhoto}
             />
             <hr className="border-migbirds-navy/10" />
             <TextEditor text={text} onTextChange={setText} />
@@ -80,6 +83,7 @@ export default function Home() {
               <ExportButtons
                 template={template}
                 text={text}
+                selectedPhoto={selectedPhoto}
                 disabled={!text.trim()}
               />
             )}
@@ -100,7 +104,7 @@ export default function Home() {
                 format === "linkedin" ? "max-w-full" : "max-w-[500px]"
               }`}
             >
-              {template && <CardPreview template={template} text={text} />}
+              {template && <CardPreview template={template} text={text} selectedPhoto={selectedPhoto} />}
             </div>
           </div>
         </div>

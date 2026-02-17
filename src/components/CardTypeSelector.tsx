@@ -1,24 +1,29 @@
 "use client";
 
-import { PostType, CardFormat, ColorVariant } from "@/lib/types";
+import { PostType, CardFormat, ColorVariant, PEOPLE_PHOTOS } from "@/lib/types";
 
 interface CardTypeSelectorProps {
   postType: PostType;
   format: CardFormat;
   colorVariant: ColorVariant;
+  selectedPhoto: string;
   onPostTypeChange: (type: PostType) => void;
   onFormatChange: (format: CardFormat) => void;
   onColorVariantChange: (variant: ColorVariant) => void;
+  onPhotoChange: (photo: string) => void;
 }
 
 export default function CardTypeSelector({
   postType,
   format,
   colorVariant,
+  selectedPhoto,
   onPostTypeChange,
   onFormatChange,
   onColorVariantChange,
+  onPhotoChange,
 }: CardTypeSelectorProps) {
+  const showPhotoPicker = postType === "insightful" && format === "linkedin" && colorVariant === "light";
   return (
     <div className="space-y-6">
       {/* Post Type */}
@@ -121,6 +126,34 @@ export default function CardTypeSelector({
               <div className="w-4 h-4 rounded-full bg-[#0A0632]" />
               Dark
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Person Photo Picker (only for light insightful wide) */}
+      {showPhotoPicker && (
+        <div>
+          <label className="block text-sm font-semibold text-migbirds-navy mb-3">
+            Person
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {PEOPLE_PHOTOS.map((photo) => (
+              <button
+                key={photo.id}
+                onClick={() => onPhotoChange(photo.src)}
+                className={`relative aspect-square rounded-xl overflow-hidden transition-all ${
+                  selectedPhoto === photo.src
+                    ? "ring-2 ring-migbirds-navy ring-offset-2"
+                    : "border border-migbirds-navy/10 hover:border-migbirds-navy/30"
+                }`}
+              >
+                <img
+                  src={photo.src}
+                  alt={photo.label}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         </div>
       )}

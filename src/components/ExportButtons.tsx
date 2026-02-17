@@ -6,12 +6,13 @@ import { renderCardSvg } from "@/lib/templates";
 interface ExportButtonsProps {
   template: TemplateConfig;
   text: string;
+  selectedPhoto?: string;
   disabled: boolean;
 }
 
-export default function ExportButtons({ template, text, disabled }: ExportButtonsProps) {
+export default function ExportButtons({ template, text, selectedPhoto, disabled }: ExportButtonsProps) {
   const downloadSvg = async () => {
-    const svgString = await renderCardSvg(template, text);
+    const svgString = await renderCardSvg(template, text, selectedPhoto);
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -22,7 +23,7 @@ export default function ExportButtons({ template, text, disabled }: ExportButton
   };
 
   const downloadPng = async () => {
-    const svgString = await renderCardSvg(template, text);
+    const svgString = await renderCardSvg(template, text, selectedPhoto);
     const scale = 2; // 2x resolution for sharp output
     const canvas = document.createElement("canvas");
     canvas.width = template.width * scale;

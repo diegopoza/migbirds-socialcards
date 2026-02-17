@@ -112,6 +112,29 @@ export const TEMPLATES: TemplateConfig[] = [
   },
 ];
 
+export interface PersonPhoto {
+  id: string;
+  src: string;
+  label: string;
+}
+
+export const PEOPLE_PHOTOS: PersonPhoto[] = [
+  { id: "talent-1", src: "/people/talent-1.jpg", label: "Talent 1" },
+  { id: "talent-2", src: "/people/talent-2.jpg", label: "Talent 2" },
+  { id: "talent-3", src: "/people/talent-3.jpg", label: "Talent 3" },
+  { id: "talent-4", src: "/people/talent-4.jpg", label: "Talent 4" },
+  { id: "talent-5", src: "/people/talent-5.jpg", label: "Talent 5" },
+  { id: "talent-6", src: "/people/talent-6.jpg", label: "Talent 6" },
+  { id: "talent-7", src: "/people/talent-7.jpg", label: "Talent 7" },
+  { id: "talent-8", src: "/people/talent-8.jpg", label: "Talent 8" },
+  { id: "talent-9", src: "/people/talent-9.jpg", label: "Talent 9" },
+  { id: "talent-10", src: "/people/talent-10.jpg", label: "Talent 10" },
+  { id: "talent-11", src: "/people/talent-11.jpg", label: "Talent 11" },
+  { id: "talent-12", src: "/people/talent-12.jpg", label: "Talent 12" },
+  { id: "team-1", src: "/people/team-1.jpg", label: "Team 1" },
+  { id: "team-2", src: "/people/team-2.jpg", label: "Team 2" },
+];
+
 export function getTemplate(
   postType: PostType,
   format: CardFormat,
