@@ -450,6 +450,8 @@ function DarkPhotoFrame({ width, height, seed }: { width: number; height: number
 // Photo frame for light insightful wide template (single rounded photo on the right)
 function LightPhotoFrame({ seed, photoSrc }: { seed: string; photoSrc: string }) {
   const clipId = `lightphotoclip_${seed}`;
+  // Clip rect defines the visible area; image rect matches it so
+  // xMidYMid slice centers the photo within the rounded frame.
   return (
     <>
       <defs>
@@ -460,10 +462,10 @@ function LightPhotoFrame({ seed, photoSrc }: { seed: string; photoSrc: string })
       <g clipPath={`url(#${clipId})`}>
         <image
           href={photoSrc}
-          x={604}
-          y={96}
-          width={558}
-          height={570}
+          x={784}
+          y={110}
+          width={352.757}
+          height={407}
           preserveAspectRatio="xMidYMid slice"
         />
       </g>
@@ -780,7 +782,7 @@ function buildSvgString(
         <clipPath id="lightphotoclip"><rect x="784" y="110" width="352.757" height="407" rx="40"/></clipPath>
       </defs>
       <g clip-path="url(#lightphotoclip)">
-        <image href="${lightPhotoData}" x="604" y="96" width="558" height="570" preserveAspectRatio="xMidYMid slice"/>
+        <image href="${lightPhotoData}" x="784" y="110" width="352.757" height="407" preserveAspectRatio="xMidYMid slice"/>
       </g>
     `;
   }
