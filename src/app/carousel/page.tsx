@@ -1,7 +1,7 @@
 "use client";
 
 import "./carousel.css";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   SlideType,
@@ -20,7 +20,7 @@ import {
   variantKey,
   VARIANT_BASE_PALETTE,
 } from "@/lib/carousel-types";
-import { CarouselSlide } from "@/lib/CarouselSlide";
+import { CarouselSlideView } from "@/lib/CarouselSlideView";
 import { exportSlidePng, exportSlideSvg, exportAllPng } from "@/lib/carousel-export";
 
 // Which editable fields each slide type exposes, with contextual labels.
@@ -77,10 +77,6 @@ export default function CarouselPage() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
 
-  const captureRefs = useRef<Record<SlideType, HTMLDivElement | null>>({
-    hook: null, constat: null, data: null, insight: null, solution: null,
-  });
-
   const active = configs[activeType];
   const meta = SLIDE_TYPE_META[activeType];
   const locked = isLockedVariant(activeType, active.variant);
@@ -104,12 +100,10 @@ export default function CarouselPage() {
   };
 
   const exportOne = async (type: SlideType) => {
-    const node = captureRefs.current[type];
-    if (!node) return;
     setBusy(true);
     setStatus("Rendering PNG…");
     try {
-      await exportSlidePng(node, `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.png`);
+      await exportSlidePng(toRenderData(configs[type], seriesLabel), `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.png`);
       setStatus("Downloaded ✓");
     } catch (err) {
       console.error(err);
@@ -119,12 +113,10 @@ export default function CarouselPage() {
     }
   };
   const exportOneSvg = async (type: SlideType) => {
-    const node = captureRefs.current[type];
-    if (!node) return;
     setBusy(true);
     setStatus("Rendering SVG…");
     try {
-      await exportSlideSvg(node, `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.svg`);
+      await exportSlideSvg(toRenderData(configs[type], seriesLabel), `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.svg`);
       setStatus("Downloaded ✓");
     } catch (err) {
       console.error(err);
@@ -136,12 +128,12 @@ export default function CarouselPage() {
   const exportAll = async () => {
     setExportingAll(true);
     setStatus("Rendering 5 slides…");
-    const nodes = SLIDE_TYPES.map((t) => ({
-      node: captureRefs.current[t],
+    const items = SLIDE_TYPES.map((t) => ({
+      data: toRenderData(configs[t], seriesLabel),
       filename: `migbirds-carousel-${SLIDE_NUMBER[t]}-${t}.png`,
-    })).filter((x): x is { node: HTMLDivElement; filename: string } => !!x.node);
+    }));
     try {
-      await exportAllPng(nodes);
+      await exportAllPng(items);
       setStatus("All 5 downloaded ✓");
     } catch (err) {
       console.error(err);
@@ -350,46 +342,28 @@ export default function CarouselPage() {
             </div>
 
             <div className="rounded-2xl overflow-hidden shadow-xl border border-migbirds-navy/10" style={{ width: 560, height: 560, maxWidth: "100%" }}>
-              <div style={{ width: CAROUSEL_SIZE, height: CAROUSEL_SIZE, transform: `scale(${560 / CAROUSEL_SIZE})`, transformOrigin: "top left" }}>
-                <CarouselSlide data={toRenderData(active, seriesLabel)} />
-              </div>
+              <CarouselSlideView data={toRenderData(active, seriesLabel)} size={560} />
             </div>
 
             {/* Mini strip */}
             <div className="flex gap-2 mt-4 flex-wrap">
-              {SLIDE_TYPES.map((t) => {
-                const size = 96;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => setActiveType(t)}
-                    className={`relative rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                      activeType === t ? "border-migbirds-purple shadow-lg scale-105" : "border-migbirds-navy/10 hover:border-migbirds-navy/30 opacity-80"
-                    }`}
-                    style={{ width: size, height: size }}
-                  >
-                    <div style={{ width: CAROUSEL_SIZE, height: CAROUSEL_SIZE, transform: `scale(${size / CAROUSEL_SIZE})`, transformOrigin: "top left" }}>
-                      <CarouselSlide data={toRenderData(configs[t], seriesLabel)} />
-                    </div>
-                    <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] font-bold py-0.5 text-center">{SLIDE_NUMBER[t]}</span>
-                  </button>
-                );
-              })}
+              {SLIDE_TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveType(t)}
+                  className={`relative rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                    activeType === t ? "border-migbirds-purple shadow-lg scale-105" : "border-migbirds-navy/10 hover:border-migbirds-navy/30 opacity-80"
+                  }`}
+                  style={{ width: 96, height: 96 }}
+                >
+                  <CarouselSlideView data={toRenderData(configs[t], seriesLabel)} size={96} />
+                  <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] font-bold py-0.5 text-center">{SLIDE_NUMBER[t]}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </main>
-
-      {/* ── Hidden full-size render area for capture ── */}
-      <div aria-hidden style={{ position: "fixed", left: -100000, top: 0, pointerEvents: "none" }}>
-        {SLIDE_TYPES.map((t) => (
-          <CarouselSlide
-            key={t}
-            ref={(el) => { captureRefs.current[t] = el; }}
-            data={toRenderData(configs[t], seriesLabel)}
-          />
-        ))}
-      </div>
     </div>
   );
 }

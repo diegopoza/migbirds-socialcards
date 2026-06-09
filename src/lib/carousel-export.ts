@@ -1,99 +1,72 @@
-import { toPng, toSvg } from "html-to-image";
-import { CAROUSEL_SIZE } from "./carousel-types";
+// Export carousel slides via the native-SVG → Image → canvas pipeline.
+// No <foreignObject>, so the canvas never taints and toBlob/toDataURL work.
 
-// Precompute an @font-face CSS string with base64 data-URLs for our local
-// fonts and pass it as `fontEmbedCSS`, so html-to-image skips its own
-// stylesheet scan (which can hang on cross-origin sheets) and the exported
-// image still renders Space Grotesk / Hanken Grotesk correctly.
-let fontCssCache: string | null = null;
+import { buildSlideSvg, loadExportAssets } from "./carousel-svg";
+import { SlideRenderData, CAROUSEL_SIZE } from "./carousel-types";
 
-async function fetchDataUrl(url: string): Promise<string> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return await new Promise<string>((resolve) => {
-    const fr = new FileReader();
-    fr.onloadend = () => resolve(fr.result as string);
-    fr.readAsDataURL(blob);
-  });
-}
-
-async function buildFontEmbedCss(): Promise<string> {
-  if (fontCssCache) return fontCssCache;
-  const [sg, hk, hki] = await Promise.all([
-    fetchDataUrl("/fonts/SpaceGrotesk-VariableFont_wght.ttf"),
-    fetchDataUrl("/fonts/HankenGrotesk-VariableFont_wght.ttf"),
-    fetchDataUrl("/fonts/HankenGrotesk-Italic-VariableFont_wght.ttf"),
-  ]);
-  fontCssCache = `
-    @font-face{font-family:'Space Grotesk';src:url(${sg}) format('truetype');font-weight:300 700;font-style:normal;}
-    @font-face{font-family:'Hanken Grotesk';src:url(${hk}) format('truetype');font-weight:100 900;font-style:normal;}
-    @font-face{font-family:'Hanken Grotesk';src:url(${hki}) format('truetype');font-weight:100 900;font-style:italic;}
-  `;
-  return fontCssCache;
-}
-
-async function baseOptions() {
-  return {
-    width: CAROUSEL_SIZE,
-    height: CAROUSEL_SIZE,
-    pixelRatio: 2, // 2160×2160 — crisp, downscales cleanly to 1080
-    cacheBust: true,
-    fontEmbedCSS: await buildFontEmbedCss(),
-    style: { transform: "none", margin: "0" },
-  };
-}
-
-function triggerDownload(dataUrl: string, filename: string) {
+function triggerDownload(href: string, filename: string) {
   const a = document.createElement("a");
-  a.href = dataUrl;
+  a.href = href;
   a.download = filename;
   a.click();
 }
 
-async function ready() {
-  if (typeof document !== "undefined" && "fonts" in document) {
-    try {
-      await document.fonts.ready;
-    } catch {
-      /* noop */
-    }
+async function svgToImage(svg: string): Promise<HTMLImageElement> {
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("SVG image failed to load"));
+      img.src = url;
+    });
+    return img;
+  } finally {
+    // revoke after load handlers have run on next tick
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 }
 
-// Guard against environments where the capture step never resolves so the UI
-// can recover and report instead of hanging forever.
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Export timed out after ${ms}ms`)), ms)
-    ),
-  ]);
+async function rasterizePng(data: SlideRenderData): Promise<Blob> {
+  const assets = await loadExportAssets();
+  if ("fonts" in document) {
+    try { await document.fonts.ready; } catch { /* noop */ }
+  }
+  const svg = buildSlideSvg(data, { embed: true, assets });
+  const img = await svgToImage(svg);
+  const scale = 2; // 2160×2160
+  const canvas = document.createElement("canvas");
+  canvas.width = CAROUSEL_SIZE * scale;
+  canvas.height = CAROUSEL_SIZE * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("no 2d context");
+  ctx.scale(scale, scale);
+  ctx.drawImage(img, 0, 0, CAROUSEL_SIZE, CAROUSEL_SIZE);
+  return await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png")
+  );
 }
 
-export async function exportSlidePng(node: HTMLElement, filename: string) {
-  const opts = await baseOptions();
-  await ready();
-  // First pass warms the image cache; second renders reliably.
-  await withTimeout(toPng(node, opts), 20000);
-  const dataUrl = await withTimeout(toPng(node, opts), 20000);
-  triggerDownload(dataUrl, filename);
+export async function exportSlidePng(data: SlideRenderData, filename: string) {
+  const blob = await rasterizePng(data);
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function exportSlideSvg(node: HTMLElement, filename: string) {
-  const opts = await baseOptions();
-  await ready();
-  const dataUrl = await withTimeout(toSvg(node, opts), 20000);
-  triggerDownload(dataUrl, filename);
+export async function exportSlideSvg(data: SlideRenderData, filename: string) {
+  const assets = await loadExportAssets();
+  const svg = buildSlideSvg(data, { embed: true, assets });
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function exportAllPng(nodes: { node: HTMLElement; filename: string }[]) {
-  const opts = await baseOptions();
-  await ready();
-  for (const { node, filename } of nodes) {
-    await withTimeout(toPng(node, opts), 20000); // warm
-    const dataUrl = await withTimeout(toPng(node, opts), 20000);
-    triggerDownload(dataUrl, filename);
-    await new Promise((r) => setTimeout(r, 400));
+export async function exportAllPng(items: { data: SlideRenderData; filename: string }[]) {
+  for (const { data, filename } of items) {
+    await exportSlidePng(data, filename);
+    await new Promise((r) => setTimeout(r, 350));
   }
 }
