@@ -1,85 +1,163 @@
 "use client";
 
-import { useState } from "react";
+import "./carousel.css";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
-  CarouselSlideNumber,
-  CarouselTheme,
-  CarouselSlideData,
-  getSlideConfig,
+  SlideType,
+  Variant,
+  ThemeToggle,
+  SlideConfig,
+  SlideRenderData,
+  SLIDE_TYPES,
+  SLIDE_TYPE_META,
+  SLIDE_NUMBER,
   CAROUSEL_SIZE,
+  DEFAULT_SERIES_LABEL,
+  defaultSlideConfig,
+  resolvePalette,
+  isLockedVariant,
+  variantKey,
+  VARIANT_BASE_PALETTE,
 } from "@/lib/carousel-types";
-import { CarouselSlidePreview } from "@/lib/carousel-templates";
-import CarouselSlideSelector from "@/components/CarouselSlideSelector";
-import CarouselTextEditor from "@/components/CarouselTextEditor";
-import CarouselExportButtons from "@/components/CarouselExportButtons";
+import { CarouselSlide } from "@/lib/CarouselSlide";
+import { exportSlidePng, exportSlideSvg, exportAllPng } from "@/lib/carousel-export";
 
-interface SlideTexts {
-  mainText: string;
-  secondaryText: string;
+// Which editable fields each slide type exposes, with contextual labels.
+type FieldKey = "mainText" | "highlightText" | "secondaryText" | "source" | "cta" | "url";
+const FIELDS: Record<SlideType, { key: FieldKey; label: string; placeholder: string; big?: boolean }[]> = {
+  hook: [
+    { key: "mainText", label: "Headline — lead", placeholder: "Your résumé predicts", big: true },
+    { key: "highlightText", label: "Headline — highlight phrase", placeholder: "almost nothing." },
+    { key: "secondaryText", label: "Subheadline", placeholder: "The tension line…", big: true },
+  ],
+  constat: [
+    { key: "mainText", label: "Scenario", placeholder: "Describe the situation…", big: true },
+    { key: "secondaryText", label: "Conversational line", placeholder: "Sound familiar?" },
+  ],
+  data: [
+    { key: "mainText", label: "Statistic (one figure)", placeholder: "7.4s" },
+    { key: "secondaryText", label: "Label", placeholder: "What the number means…", big: true },
+    { key: "source", label: "Source", placeholder: "Author · Study, Year" },
+  ],
+  insight: [
+    { key: "mainText", label: "Insight — lead", placeholder: "We keep hiring for what fits on a page —", big: true },
+    { key: "highlightText", label: "Insight — emphasis phrase", placeholder: "then act surprised…", big: true },
+    { key: "secondaryText", label: "Restatement", placeholder: "Supporting line…", big: true },
+  ],
+  solution: [
+    { key: "mainText", label: "Claim", placeholder: "A new way to grow" },
+    { key: "secondaryText", label: "Product body", placeholder: "What Migbirds does…", big: true },
+    { key: "cta", label: "CTA label", placeholder: "Take the 20-min test" },
+    { key: "url", label: "URL", placeholder: "migbirds.com" },
+  ],
+};
+
+function toRenderData(cfg: SlideConfig, seriesLabel: string): SlideRenderData {
+  return {
+    type: cfg.type,
+    variant: cfg.variant,
+    palette: resolvePalette(cfg.type, cfg.variant, cfg.theme),
+    seriesLabel,
+    content: cfg.content,
+  };
 }
 
 export default function CarouselPage() {
-  const [activeSlide, setActiveSlide] = useState<CarouselSlideNumber>(1);
-  const [theme, setTheme] = useState<CarouselTheme>("light");
+  const [configs, setConfigs] = useState<Record<SlideType, SlideConfig>>({
+    hook: defaultSlideConfig("hook"),
+    constat: defaultSlideConfig("constat"),
+    data: defaultSlideConfig("data"),
+    insight: defaultSlideConfig("insight"),
+    solution: defaultSlideConfig("solution"),
+  });
+  const [activeType, setActiveType] = useState<SlideType>("hook");
+  const [seriesLabel, setSeriesLabel] = useState(DEFAULT_SERIES_LABEL);
+  const [exportingAll, setExportingAll] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string>("");
 
-  // Store text per slide so switching slides preserves content
-  const [slideTexts, setSlideTexts] = useState<Record<CarouselSlideNumber, SlideTexts>>({
-    1: { mainText: "", secondaryText: "" },
-    2: { mainText: "", secondaryText: "" },
-    3: { mainText: "", secondaryText: "" },
-    4: { mainText: "", secondaryText: "" },
-    5: { mainText: "", secondaryText: "" },
+  const captureRefs = useRef<Record<SlideType, HTMLDivElement | null>>({
+    hook: null, constat: null, data: null, insight: null, solution: null,
   });
 
-  const currentTexts = slideTexts[activeSlide];
-  const slideConfig = getSlideConfig(activeSlide);
+  const active = configs[activeType];
+  const meta = SLIDE_TYPE_META[activeType];
+  const locked = isLockedVariant(activeType, active.variant);
 
-  const handleMainTextChange = (text: string) => {
-    setSlideTexts((prev) => ({
+  const update = (type: SlideType, patch: Partial<SlideConfig>) =>
+    setConfigs((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
+
+  const updateContent = (key: FieldKey, value: string) =>
+    setConfigs((prev) => ({
       ...prev,
-      [activeSlide]: { ...prev[activeSlide], mainText: text },
+      [activeType]: { ...prev[activeType], content: { ...prev[activeType].content, [key]: value } },
     }));
+
+  const handleVariant = (variant: Variant) => {
+    // Default the theme toggle to the new variant's intended base look
+    // (e.g. Manifesto → dark, Quote → light). Toggle still works afterwards;
+    // locked colored variants ignore it.
+    const base = VARIANT_BASE_PALETTE[variantKey(activeType, variant)];
+    const theme: ThemeToggle = base === "dark" || base === "blue" ? "dark" : "light";
+    update(activeType, { variant, theme });
   };
 
-  const handleSecondaryTextChange = (text: string) => {
-    setSlideTexts((prev) => ({
-      ...prev,
-      [activeSlide]: { ...prev[activeSlide], secondaryText: text },
-    }));
+  const exportOne = async (type: SlideType) => {
+    const node = captureRefs.current[type];
+    if (!node) return;
+    setBusy(true);
+    setStatus("Rendering PNG…");
+    try {
+      await exportSlidePng(node, `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.png`);
+      setStatus("Downloaded ✓");
+    } catch (err) {
+      console.error(err);
+      setStatus("Export failed — see console");
+    } finally {
+      setBusy(false);
+    }
   };
-
-  const currentSlideData: CarouselSlideData = {
-    slideNumber: activeSlide,
-    mainText: currentTexts.mainText,
-    secondaryText: currentTexts.secondaryText,
-    theme,
+  const exportOneSvg = async (type: SlideType) => {
+    const node = captureRefs.current[type];
+    if (!node) return;
+    setBusy(true);
+    setStatus("Rendering SVG…");
+    try {
+      await exportSlideSvg(node, `migbirds-carousel-${SLIDE_NUMBER[type]}-${type}.svg`);
+      setStatus("Downloaded ✓");
+    } catch (err) {
+      console.error(err);
+      setStatus("Export failed — see console");
+    } finally {
+      setBusy(false);
+    }
   };
-
-  const allSlidesData: CarouselSlideData[] = ([1, 2, 3, 4, 5] as CarouselSlideNumber[]).map(
-    (num) => ({
-      slideNumber: num,
-      mainText: slideTexts[num].mainText,
-      secondaryText: slideTexts[num].secondaryText,
-      theme,
-    })
-  );
+  const exportAll = async () => {
+    setExportingAll(true);
+    setStatus("Rendering 5 slides…");
+    const nodes = SLIDE_TYPES.map((t) => ({
+      node: captureRefs.current[t],
+      filename: `migbirds-carousel-${SLIDE_NUMBER[t]}-${t}.png`,
+    })).filter((x): x is { node: HTMLDivElement; filename: string } => !!x.node);
+    try {
+      await exportAllPng(nodes);
+      setStatus("All 5 downloaded ✓");
+    } catch (err) {
+      console.error(err);
+      setStatus("Export failed — see console");
+    } finally {
+      setExportingAll(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-migbirds-cream">
       {/* Header */}
       <header className="border-b border-migbirds-navy/10 bg-white/60 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-          {/* Migbirds Logo */}
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
           <Link href="/">
-            <svg
-              width="170"
-              height="32"
-              viewBox="48 486 175 43"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="shrink-0"
-            >
+            <svg width="170" height="32" viewBox="48 486 175 43" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
               <path d="M193.607 486V490.373H200.142V496.907H204.515V486H193.607Z" fill="#FF72D0" />
               <path d="M208.012 486V490.373H214.55V496.907H218.922V486H208.012Z" fill="#0A57FF" />
               <path d="M208.012 500.405V504.778H214.55V511.316H218.922V500.405H208.012Z" fill="#FFB300" />
@@ -95,86 +173,205 @@ export default function CarouselPage() {
               <path d="M144.652 496.327C144.652 497.852 143.414 499.09 141.889 499.09C140.363 499.09 139.125 497.852 139.125 496.327C139.125 494.801 140.363 493.563 141.889 493.563C143.414 493.563 144.652 494.801 144.652 496.327Z" fill="#0A0632" />
             </svg>
           </Link>
-
-          {/* Navigation */}
           <div className="flex items-center gap-1 ml-3 bg-migbirds-navy/5 rounded-lg p-0.5">
-            <Link
-              href="/"
-              className="px-3 py-1.5 rounded-md text-[11px] font-medium text-migbirds-navy/50 hover:text-migbirds-navy/80 transition-colors"
-            >
+            <Link href="/" className="px-3 py-1.5 rounded-md text-[11px] font-medium text-migbirds-navy/50 hover:text-migbirds-navy/80 transition-colors">
               Social Cards
             </Link>
-            <span className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-white text-migbirds-navy shadow-sm">
-              Carousel
-            </span>
+            <span className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-white text-migbirds-navy shadow-sm">Carousel</span>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 items-start">
-          {/* Sidebar Controls */}
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-8 items-start">
+          {/* ── Sidebar controls ── */}
           <div className="space-y-6 bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-migbirds-navy/10 shadow-sm">
-            <CarouselSlideSelector
-              slideNumber={activeSlide}
-              theme={theme}
-              onSlideChange={setActiveSlide}
-              onThemeChange={setTheme}
-            />
+            {/* Slide tabs */}
+            <div>
+              <label className="block text-sm font-semibold text-migbirds-navy mb-3">Slide</label>
+              <div className="space-y-1.5">
+                {SLIDE_TYPES.map((t) => {
+                  const m = SLIDE_TYPE_META[t];
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setActiveType(t)}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${
+                        activeType === t
+                          ? "bg-migbirds-navy text-white shadow-lg"
+                          : "bg-white text-migbirds-navy border border-migbirds-navy/10 hover:border-migbirds-navy/30"
+                      }`}
+                    >
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                        activeType === t ? "bg-white/20 text-white" : "bg-migbirds-navy/5 text-migbirds-navy/50"
+                      }`}>{m.number}</span>
+                      <span className="min-w-0">
+                        <span className="font-semibold block truncate">{m.name}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <hr className="border-migbirds-navy/10" />
-            <CarouselTextEditor
-              slideConfig={slideConfig}
-              mainText={currentTexts.mainText}
-              secondaryText={currentTexts.secondaryText}
-              onMainTextChange={handleMainTextChange}
-              onSecondaryTextChange={handleSecondaryTextChange}
-            />
+
+            {/* Variant picker */}
+            <div>
+              <label className="block text-sm font-semibold text-migbirds-navy mb-3">Design variant</label>
+              <div className="grid grid-cols-3 gap-2">
+                {meta.variants.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => handleVariant(v.id)}
+                    className={`px-2 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                      active.variant === v.id
+                        ? "bg-migbirds-purple text-white shadow-lg shadow-migbirds-purple/25"
+                        : "bg-white text-migbirds-navy border border-migbirds-navy/20 hover:border-migbirds-navy/40"
+                    }`}
+                  >
+                    <span className="block font-bold text-sm">{v.id}</span>
+                    <span className={`block text-[10px] leading-tight mt-0.5 ${active.variant === v.id ? "text-white/70" : "text-migbirds-navy/40"}`}>
+                      {v.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Theme toggle */}
+            <div>
+              <label className="block text-sm font-semibold text-migbirds-navy mb-3">Theme</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["light", "dark"] as ThemeToggle[]).map((th) => (
+                  <button
+                    key={th}
+                    disabled={locked}
+                    onClick={() => update(activeType, { theme: th })}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                      locked
+                        ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
+                        : active.theme === th
+                        ? "bg-migbirds-navy text-white shadow-lg"
+                        : "bg-white text-migbirds-navy border border-migbirds-navy/20 hover:border-migbirds-navy/40"
+                    }`}
+                  >
+                    <span className={`w-4 h-4 rounded-full ${th === "light" ? "bg-[#F7F5F3] border border-gray-300" : "bg-[#0A0632]"}`} />
+                    {th === "light" ? "Light" : "Dark"}
+                  </button>
+                ))}
+              </div>
+              {locked && (
+                <p className="text-[11px] text-migbirds-navy/40 mt-2">
+                  Variant {active.variant} ({meta.variants.find((v) => v.id === active.variant)?.label}) is an intrinsically colored look — theme toggle doesn&apos;t apply.
+                </p>
+              )}
+            </div>
+
             <hr className="border-migbirds-navy/10" />
-            <CarouselExportButtons
-              slideData={currentSlideData}
-              allSlidesData={allSlidesData}
-              disabled={!currentTexts.mainText.trim()}
-            />
+
+            {/* Text fields */}
+            <div className="space-y-4">
+              {FIELDS[activeType].map((f) => (
+                <div key={f.key}>
+                  <label className="block text-sm font-semibold text-migbirds-navy mb-2">{f.label}</label>
+                  {f.big ? (
+                    <textarea
+                      value={active.content[f.key]}
+                      onChange={(e) => updateContent(f.key, e.target.value)}
+                      rows={2}
+                      placeholder={f.placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-migbirds-navy/20 bg-white text-migbirds-navy placeholder:text-migbirds-navy/30 focus:outline-none focus:ring-2 focus:ring-migbirds-purple/50 focus:border-migbirds-purple resize-none text-sm"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={active.content[f.key]}
+                      onChange={(e) => updateContent(f.key, e.target.value)}
+                      placeholder={f.placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-migbirds-navy/20 bg-white text-migbirds-navy placeholder:text-migbirds-navy/30 focus:outline-none focus:ring-2 focus:ring-migbirds-purple/50 focus:border-migbirds-purple text-sm"
+                    />
+                  )}
+                </div>
+              ))}
+
+              {/* Series label */}
+              <div>
+                <label className="block text-sm font-semibold text-migbirds-navy mb-2">Series label (eyebrow)</label>
+                <input
+                  type="text"
+                  value={seriesLabel}
+                  onChange={(e) => setSeriesLabel(e.target.value)}
+                  placeholder={DEFAULT_SERIES_LABEL}
+                  className="w-full px-4 py-3 rounded-xl border border-migbirds-navy/20 bg-white text-migbirds-navy placeholder:text-migbirds-navy/30 focus:outline-none focus:ring-2 focus:ring-migbirds-purple/50 focus:border-migbirds-purple text-sm"
+                />
+              </div>
+            </div>
+
+            <hr className="border-migbirds-navy/10" />
+
+            {/* Export */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-migbirds-navy mb-1">Export slide {meta.number}</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => exportOne(activeType)}
+                  disabled={busy || exportingAll}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-migbirds-purple text-white hover:bg-migbirds-purple/90 transition-all shadow-lg shadow-migbirds-purple/25 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  PNG
+                </button>
+                <button
+                  onClick={() => exportOneSvg(activeType)}
+                  disabled={busy || exportingAll}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-white text-migbirds-navy border border-migbirds-navy/20 hover:border-migbirds-navy/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  SVG
+                </button>
+              </div>
+              <button
+                onClick={exportAll}
+                disabled={exportingAll || busy}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-migbirds-navy text-white hover:bg-migbirds-navy/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {exportingAll ? "Exporting…" : "Export all 5 slides (PNG)"}
+              </button>
+              {status && <p className="text-[11px] text-migbirds-navy/50 text-center">{status}</p>}
+            </div>
           </div>
 
-          {/* Preview */}
+          {/* ── Preview ── */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-migbirds-navy/60">
-                Preview — Slide {activeSlide}: {slideConfig.label}
+                Preview — Slide {meta.number}: {meta.name} · {active.variant} {meta.variants.find((v) => v.id === active.variant)?.label}
               </h2>
-              <span className="text-xs text-migbirds-navy/40">
-                {CAROUSEL_SIZE} x {CAROUSEL_SIZE}px
-              </span>
-            </div>
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-migbirds-navy/10 bg-white max-w-[560px]">
-              <CarouselSlidePreview data={currentSlideData} />
+              <span className="text-xs text-migbirds-navy/40">{CAROUSEL_SIZE} × {CAROUSEL_SIZE}px</span>
             </div>
 
-            {/* Mini slide strip */}
-            <div className="flex gap-2 mt-4">
-              {([1, 2, 3, 4, 5] as CarouselSlideNumber[]).map((num) => {
-                const previewData: CarouselSlideData = {
-                  slideNumber: num,
-                  mainText: slideTexts[num].mainText,
-                  secondaryText: slideTexts[num].secondaryText,
-                  theme,
-                };
+            <div className="rounded-2xl overflow-hidden shadow-xl border border-migbirds-navy/10" style={{ width: 560, height: 560, maxWidth: "100%" }}>
+              <div style={{ width: CAROUSEL_SIZE, height: CAROUSEL_SIZE, transform: `scale(${560 / CAROUSEL_SIZE})`, transformOrigin: "top left" }}>
+                <CarouselSlide data={toRenderData(active, seriesLabel)} />
+              </div>
+            </div>
+
+            {/* Mini strip */}
+            <div className="flex gap-2 mt-4 flex-wrap">
+              {SLIDE_TYPES.map((t) => {
+                const size = 96;
                 return (
                   <button
-                    key={num}
-                    onClick={() => setActiveSlide(num)}
-                    className={`relative w-[88px] h-[88px] rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                      activeSlide === num
-                        ? "border-migbirds-purple shadow-lg scale-105"
-                        : "border-migbirds-navy/10 hover:border-migbirds-navy/30 opacity-70"
+                    key={t}
+                    onClick={() => setActiveType(t)}
+                    className={`relative rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                      activeType === t ? "border-migbirds-purple shadow-lg scale-105" : "border-migbirds-navy/10 hover:border-migbirds-navy/30 opacity-80"
                     }`}
+                    style={{ width: size, height: size }}
                   >
-                    <CarouselSlidePreview data={previewData} />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] font-bold py-0.5 text-center">
-                      {num}
+                    <div style={{ width: CAROUSEL_SIZE, height: CAROUSEL_SIZE, transform: `scale(${size / CAROUSEL_SIZE})`, transformOrigin: "top left" }}>
+                      <CarouselSlide data={toRenderData(configs[t], seriesLabel)} />
                     </div>
+                    <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[9px] font-bold py-0.5 text-center">{SLIDE_NUMBER[t]}</span>
                   </button>
                 );
               })}
@@ -182,6 +379,17 @@ export default function CarouselPage() {
           </div>
         </div>
       </main>
+
+      {/* ── Hidden full-size render area for capture ── */}
+      <div aria-hidden style={{ position: "fixed", left: -100000, top: 0, pointerEvents: "none" }}>
+        {SLIDE_TYPES.map((t) => (
+          <CarouselSlide
+            key={t}
+            ref={(el) => { captureRefs.current[t] = el; }}
+            data={toRenderData(configs[t], seriesLabel)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

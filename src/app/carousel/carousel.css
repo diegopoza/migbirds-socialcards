@@ -1,0 +1,134 @@
+/* carousel.css — "Today, We Need to Talk" carousel slide styles.
+   Ported from the design handoff (slides.css + tokens.css). All slides
+   render at a fixed 1080×1080 .slide box; preview scales via transform.
+
+   NOTE: JetBrains Mono is intentionally NOT loaded from Google Fonts — a
+   cross-origin @import freezes the html-to-image export pipeline. The mono
+   tokens (source pill + URL) fall back to the system monospace stack. */
+
+/* Space Grotesk — local variable font */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/SpaceGrotesk-VariableFont_wght.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Hanken Grotesk — local variable fonts */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/HankenGrotesk-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-Italic-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/fonts/HankenGrotesk-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --mb-off-white: #F7F5F3;
+  --mb-navy: #0A0632;
+  --mb-white: #FFFFFF;
+  --mb-purple: #974DFF;
+  --mb-blue: #0A57FF;
+  --mb-cyan: #00AAFF;
+  --mb-green: #00DB9D;
+  --mb-yellow: #FFB300;
+  --mb-pink: #FF72D0;
+  --mb-font-display: 'Space Grotesk', system-ui, sans-serif;
+  --mb-font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --mb-font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --talk-gradient: linear-gradient(90deg, #FF72D0 0%, #0A57FF 52%, #FFB300 100%);
+}
+
+/* ---------- slide frame ---------- */
+.slide {
+  width: 1080px; height: 1080px; position: relative; overflow: hidden;
+  box-sizing: border-box; padding: 84px 88px;
+  display: flex; flex-direction: column;
+  font-family: var(--mb-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.sk-content { flex: 1 1 auto; display: flex; flex-direction: column; position: relative; z-index: 2; min-height: 0; }
+.sk-header { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 3; }
+.sk-footer { display: flex; align-items: flex-end; justify-content: space-between; position: relative; z-index: 3; margin-top: 24px; }
+
+.sk-display { font-family: var(--mb-font-display); font-weight: 700; }
+.sk-statement { font-family: var(--mb-font-display); font-weight: 600; }
+
+/* eyebrow */
+.sk-eyebrow { display: flex; align-items: center; gap: 14px; font-family: var(--mb-font-display);
+  font-weight: 700; font-size: 21px; letter-spacing: 0.17em; text-transform: uppercase; }
+.sk-eyebrow-dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+
+/* progress */
+.sk-progress { display: flex; align-items: center; gap: 9px; }
+.sk-progress-seg { height: 8px; border-radius: 999px; display: inline-block; }
+
+/* slide number */
+.sk-no { display: flex; align-items: baseline; gap: 4px; font-family: var(--mb-font-display); font-weight: 700; }
+.sk-no-num { font-size: 44px; letter-spacing: -0.02em; }
+.sk-no-den { font-size: 26px; font-weight: 600; }
+
+.sk-logo { display: block; height: auto; }
+
+/* watermark big number */
+.sk-watermark { position: absolute; right: 56px; bottom: 150px; font-family: var(--mb-font-display);
+  font-weight: 700; font-size: 460px; line-height: 0.7; z-index: 1; letter-spacing: -0.04em; pointer-events: none; user-select: none; }
+
+/* sub / body text */
+.sk-sub { font-family: var(--mb-font-body); font-size: 34px; line-height: 1.45; font-weight: 400; }
+.sk-kicker { font-family: var(--mb-font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase; }
+.sk-conv { font-family: var(--mb-font-display); font-weight: 700; font-size: 56px; letter-spacing: -0.01em; }
+
+/* dot field */
+.sk-dotfield { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.sk-dot { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+.sk-dia { position: absolute; transform: translate(-50%, -50%) rotate(45deg); }
+
+/* bubble (hook C) */
+.sk-bubble { display: inline-flex; align-items: center; font-family: var(--mb-font-display); font-weight: 700;
+  font-size: 30px; padding: 18px 34px; border-radius: 28px 28px 28px 6px; letter-spacing: -0.01em; }
+
+/* chat (constat B) */
+.sk-chat { font-family: var(--mb-font-body); font-size: 40px; line-height: 1.32; font-weight: 500;
+  max-width: 760px; padding: 36px 40px; }
+.sk-chat--in { border: 1px solid; border-radius: 32px 32px 32px 8px; }
+.sk-chat--out { border-radius: 32px 32px 8px 32px; font-family: var(--mb-font-display); font-weight: 700; font-size: 46px; max-width: 520px; }
+
+/* data */
+.sk-stat { font-family: var(--mb-font-display); font-weight: 700; }
+.sk-statlabel { font-family: var(--mb-font-body); font-size: 36px; line-height: 1.4; font-weight: 500; text-wrap: balance; }
+.sk-source { display: inline-flex; align-items: center; margin-top: 34px; font-family: var(--mb-font-mono);
+  font-size: 20px; letter-spacing: 0.02em; padding: 12px 24px; border: 1px solid; border-radius: 999px; }
+
+.sk-gradtext { background: var(--talk-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* glow */
+.sk-glow { position: absolute; width: 900px; height: 900px; left: 50%; top: 44%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(10,87,255,0.55) 0%, rgba(0,170,255,0.18) 38%, transparent 68%);
+  filter: blur(40px); z-index: 1; pointer-events: none; }
+.sk-glow--pink { background: radial-gradient(circle, rgba(255,114,208,0.40) 0%, rgba(151,77,255,0.20) 42%, transparent 70%);
+  left: 70%; top: 38%; }
+
+/* insight quote */
+.sk-quote { font-family: var(--mb-font-display); font-weight: 700; font-size: 200px; line-height: 0.5; display: block; }
+.sk-mark-under { background: linear-gradient(transparent 62%, rgba(10,6,50,0.18) 62%); }
+
+/* solution */
+.sk-cta-row { display: flex; align-items: center; gap: 32px; }
+.sk-cta-btn { display: inline-flex; align-items: center; font-family: var(--mb-font-display); font-weight: 700;
+  font-size: 30px; padding: 22px 42px; border-radius: 999px; background: #F7F5F3; color: #0A0632; letter-spacing: -0.01em; }
+.sk-url { font-family: var(--mb-font-mono); font-size: 28px; letter-spacing: 0.01em; opacity: 0.92; }
+
+.sk-gradcard { padding: 4px; border-radius: 44px; background: var(--talk-gradient); }
+.sk-gradcard-inner { background: #0B0735; border-radius: 40px; padding: 80px 72px; display: flex; flex-direction: column; align-items: center; }
