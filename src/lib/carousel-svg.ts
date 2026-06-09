@@ -323,19 +323,17 @@ function renderContent(data: SlideRenderData, embed: boolean, assets: ExportAsse
       break;
     }
     case "hook_C": {
-      const words = mixWords(c.mainText, p.fg, c.highlightText, "#FFB300");
-      const fit = fitWrapWords(words, CONTENT_W, 560, 122, 56, 700, DISPLAY, 1.0, -0.03);
-      const bubbleH = 30 + 36, totalH = bubbleH + fit.lines.length * fit.lineHeight;
-      const top = CENTER_Y - totalH / 2;
+      // No "We need to talk" pill — the freed space lets the headline run
+      // larger and sit centered (amber highlight + amber eyebrow dot remain
+      // the variant's signature).
       body += dotField(3);
-      // bubble
-      const tlid = "tl_hookC"; defs.push(talkLineDef(tlid));
-      const bw = measure("We need to talk.", 30, 700, DISPLAY, -0.01) + 68;
-      body += `<path d="${roundRectPath(PAD_X, top, bw, 66, [28, 28, 28, 6])}" fill="url(#${tlid})"/>`;
-      body += textEl(PAD_X + 34, top + 43, "We need to talk.", { size: 30, weight: 700, family: DISPLAY, color: "#fff", spacing: -0.01 });
-      const baseY0 = top + 66 + 36 + fit.size * 0.8;
+      const words = mixWords(c.mainText, p.fg, c.highlightText, "#FFB300");
+      const fit = fitWrapWords(words, CONTENT_W, 660, 140, 60, 700, DISPLAY, 1.0, -0.03);
+      const totalH = fit.lines.length * fit.lineHeight;
+      const top = CENTER_Y - totalH / 2 + 24;
+      const baseY0 = top + fit.size * 0.8;
       body += mixedLines(fit.lines, PAD_X, baseY0, fit.lineHeight, { size: fit.size, weight: 700, family: DISPLAY, spacing: -0.03 }, "start");
-      const subY = baseY0 + (fit.lines.length - 1) * fit.lineHeight + 40 + 28;
+      const subY = baseY0 + (fit.lines.length - 1) * fit.lineHeight + 44 + 28;
       body += subParagraph(c.secondaryText, PAD_X, subY, 760, p.muted);
       body += logo(theme, 150, embed, assets);
       body += slideNo(1, theme);
