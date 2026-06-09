@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PostType, CardFormat, ColorVariant, getTemplate, PEOPLE_PHOTOS } from "@/lib/types";
 import { CardPreview } from "@/lib/templates";
 import CardTypeSelector from "@/components/CardTypeSelector";
@@ -55,9 +56,18 @@ export default function Home() {
             <path d="M87.4723 496.327C87.4723 497.852 86.234 499.09 84.7088 499.09C83.1836 499.09 81.9453 497.852 81.9453 496.327C81.9453 494.801 83.1836 493.563 84.7088 493.563C86.234 493.563 87.4723 494.801 87.4723 496.327Z" fill="#0A0632" />
             <path d="M144.652 496.327C144.652 497.852 143.414 499.09 141.889 499.09C140.363 499.09 139.125 497.852 139.125 496.327C139.125 494.801 140.363 493.563 141.889 493.563C143.414 493.563 144.652 494.801 144.652 496.327Z" fill="#0A0632" />
           </svg>
-          <p className="text-[11px] text-migbirds-navy/50 leading-none ml-1">
-            Social Card Creator
-          </p>
+          {/* Navigation */}
+          <div className="flex items-center gap-1 ml-3 bg-migbirds-navy/5 rounded-lg p-0.5">
+            <span className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-white text-migbirds-navy shadow-sm">
+              Social Cards
+            </span>
+            <Link
+              href="/carousel"
+              className="px-3 py-1.5 rounded-md text-[11px] font-medium text-migbirds-navy/50 hover:text-migbirds-navy/80 transition-colors"
+            >
+              Carousel
+            </Link>
+          </div>
         </div>
       </header>
 
